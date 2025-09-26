@@ -95,7 +95,7 @@ const Header: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
-    alert('تم تسجيل الخروج بنجاح');
+    // alert('تم تسجيل الخروج بنجاح');
   };
 
   return (

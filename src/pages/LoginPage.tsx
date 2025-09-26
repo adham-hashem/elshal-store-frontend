@@ -44,7 +44,7 @@ const LoginPage: React.FC = () => {
 
     try {
       const { redirectTo } = await login(formData.email, formData.password);
-      alert('تم تسجيل الدخول بنجاح!');
+      // alert('تم تسجيل الدخول بنجاح!');
       const from = location.state?.from?.pathname || redirectTo;
       navigate(from, { replace: true });
     } catch (error: any) {
@@ -131,12 +131,6 @@ const LoginPage: React.FC = () => {
                 >
                   تسجيل دخول
                 </button>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                  <p className="text-blue-600 text-xs text-center">
-                    بيانات تجريبية: admin@alshal.com / admin123
-                  </p>
-                </div>
               </form>
 
               <div className="mt-6 text-center">

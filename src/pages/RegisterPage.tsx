@@ -89,7 +89,7 @@ const RegisterPage: React.FC = () => {
         formData.governorate,
         formData.password
       );
-      alert('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.');
+      // alert('تم إنشاء الحساب بنجاح! يرجى تسجيل الدخول.');
       navigate('/login');
     } catch (error: any) {
       setSubmitError(error.message || 'فشل إنشاء الحساب. حاول مرة أخرى.');
