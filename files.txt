@@ -12,6 +12,8 @@ tsconfig.app.json
 tsconfig.json
 tsconfig.node.json
 vite.config.ts
+public\firebase-app.js
+public\firebase-messaging-sw.js
 public\الصورة الرئسية.jpg
 public\اللجو.jpg
 src\App.tsx
@@ -44,4 +46,5 @@ src\pages\admin\DiscountCodesManagement.tsx
 src\pages\admin\OrdersManagement.tsx
 src\pages\admin\ProductsManagement.tsx
 src\pages\admin\ShippingManagement.tsx
+src\services\firebase.ts
 src\types\index.ts

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, CreditCard, Truck, Loader2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { CartItem } from '../types';
+// import { requestNotificationPermission } from '../services/firebase'; // Import Firebase service
 
 interface ShippingFee {
   id: string;
@@ -79,6 +80,7 @@ const CheckoutPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cartError, setCartError] = useState<string | null>(null);
   const [loadingCart, setLoadingCart] = useState(true);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -177,14 +179,14 @@ const CheckoutPage: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`فشل في جلب رسوم التوصيل: ${response.status}`);
       }
 
       const data: ApiResponse = await response.json();
       console.log('Shipping fees API response:', data);
       setShippingFees(data.items || []);
     } catch (err) {
-      setErrorShippingFees(err instanceof Error ? err.message : 'Failed to fetch shipping fees');
+      setErrorShippingFees(err instanceof Error ? err.message : 'فشل في جلب رسوم التوصيل');
     } finally {
       setLoadingShippingFees(false);
     }
@@ -224,7 +226,7 @@ const CheckoutPage: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`فشل في التحقق من كود الخصم: ${response.status}`);
         }
 
         const data: DiscountCode = await response.json();
@@ -284,6 +286,48 @@ const CheckoutPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
+  const sendAdminNotification = useCallback(
+    async (orderId: string, total: number, retryCount = 3, retryDelay = 1000) => {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('authentication_required');
+      }
+
+      for (let attempt = 1; attempt <= retryCount; attempt++) {
+        try {
+          console.log(`Sending admin notification, attempt ${attempt}/${retryCount}`);
+          const response = await fetch(`${apiUrl}/api/notification/send`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              orderNumber: orderId,
+              total: total.toFixed(2),
+            }),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error(`Notification failed with status ${response.status}: ${errorData}`);
+            throw new Error(`فشل إرسال الإشعار: ${response.status}`);
+          }
+
+          console.log('Admin notification sent successfully');
+          return;
+        } catch (err) {
+          console.error(`Notification attempt ${attempt} failed:`, err);
+          if (attempt === retryCount) {
+            throw err;
+          }
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+      }
+    },
+    [apiUrl]
+  );
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -293,6 +337,7 @@ const CheckoutPage: React.FC = () => {
       if (!validateForm()) return;
 
       setIsSubmitting(true);
+      setNotificationError(null);
 
       try {
         const token = localStorage.getItem('accessToken');
@@ -330,12 +375,13 @@ const CheckoutPage: React.FC = () => {
         if (!response.ok) {
           const errorData = await response.text();
           console.error('Order submission failed:', errorData);
-          throw new Error(`HTTP error! status: ${response.status} - ${errorData}`);
+          throw new Error(`فشل إرسال الطلب: ${response.status} - ${errorData}`);
         }
 
         const orderResult = await response.json();
         console.log('Order API response:', orderResult);
 
+        // Map API response to local order format
         const mapStatus = (status: number): 'Pending' | 'Confirmed' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' => {
           switch (status) {
             case 0: return 'Pending';
@@ -387,38 +433,43 @@ const CheckoutPage: React.FC = () => {
 
         console.log('Local order created:', localOrder);
         dispatch({ type: 'ADD_ORDER', payload: localOrder });
-        dispatch({ type: 'CLEAR_CART' });
 
+        // Notify backend to send push notification to admin
+        try {
+          await sendAdminNotification(localOrder.id, total);
+          console.log('Admin notification request sent');
+        } catch (notificationError) {
+          console.error('Failed to send admin notification:', notificationError);
+          setNotificationError('فشل إرسال إشعار للإدارة، تم إنشاء الطلب بنجاح');
+        }
+
+        dispatch({ type: 'CLEAR_CART' });
         alert('تم تأكيد طلبك بنجاح! سيتم التواصل معك قريباً.');
         navigate('/', { replace: true });
       } catch (error) {
         let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.';
         if (error instanceof Error) {
-          if (error.message === 'authentication_required') {
-            errorMessage = 'يتطلب تسجيل الدخول لإتمام الطلب. يرجى تسجيل الدخول أولاً.';
-            localStorage.removeItem('accessToken');
-            navigate('/login', { replace: true });
-          } else if (error.message.includes('401')) {
+          if (error.message.includes('authentication_required') || error.message.includes('401')) {
             errorMessage = 'جلسة تسجيل الدخول منتهية أو غير صالحة. يرجى تسجيل الدخول مرة أخرى.';
             localStorage.removeItem('accessToken');
             navigate('/login', { replace: true });
           } else if (error.message.includes('400')) {
             errorMessage = 'بيانات الطلب غير صحيحة. يرجى مراجعة البيانات المدخلة.';
-          } else if (error.message.includes('500')) {
-            errorMessage = 'خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.';
           } else if (error.message.includes('403')) {
             errorMessage = 'غير مصرح بإنشاء الطلب. يرجى التحقق من الصلاحيات.';
+          } else if (error.message.includes('500')) {
+            errorMessage = 'خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.';
           } else if (error.message.includes('network') || error.message.includes('fetch')) {
             errorMessage = 'تحقق من اتصال الإنترنت وحاول مرة أخرى.';
           }
         }
-        console.error('Order submission error:', errorMessage);
+        console.error('Order submission error:', error);
         alert(errorMessage);
       } finally {
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, validateForm, formData, discount, state.cart, total, shippingFee, discountAmount, dispatch, navigate]
+    [isSubmitting, validateForm, formData, discount, state.cart, total, shippingFee, discountAmount, dispatch, navigate, apiUrl, sendAdminNotification]
   );
 
   const handleInputChange = useCallback(
@@ -516,6 +567,12 @@ const CheckoutPage: React.FC = () => {
           <ArrowRight size={18} />
           <span>العودة للسلة</span>
         </Link>
+
+        {notificationError && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
+            <p className="text-yellow-600 text-sm">{notificationError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           {/* Checkout Form */}
