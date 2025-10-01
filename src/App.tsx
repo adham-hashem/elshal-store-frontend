@@ -37,8 +37,8 @@ function AppContent() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // Request FCM token when user is authenticated
-    if (user) {
+    // Register FCM token only for users with Admin role
+    if (user && user.role?.includes('Admin')) {
       requestNotificationPermission().then((token) => {
         if (token) {
           const tokenRequest = async () => {
@@ -49,7 +49,7 @@ function AppContent() {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
                 },
-                body: JSON.stringify({ token }), // Removed userId
+                body: JSON.stringify({ token }),
               });
 
               if (!response.ok) {
@@ -95,7 +95,7 @@ function AppContent() {
   }, [user]);
 
   useEffect(() => {
-    // Handle foreground notifications
+    // Handle foreground notifications for all users
     onForegroundMessage((payload) => {
       const { notification } = payload;
       toast.info(`${notification?.title}: ${notification?.body}`, {
