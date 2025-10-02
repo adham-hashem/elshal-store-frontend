@@ -16,6 +16,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ redirectTo: string }>;
+  googleLogin: (idToken: string) => Promise<{ redirectTo: string }>;
   register: (fullName: string, email: string, phoneNumber: string, address: string, governorate: string, password: string) => Promise<void>;
   logout: () => void;
   updateUserProfile: (data: Partial<User>) => void;
@@ -105,7 +106,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      // console.log('API Base URL:', apiUrl);
       const response = await fetch(`${apiUrl}/api/Auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       const data = await response.json();
       console.log('Login response:', data);
-      const { accessToken, refreshToken, role } = data;
+      const { accessToken, refreshToken, roles } = data;
 
       if (!accessToken) {
         throw new Error('accessToken is missing in the response');
@@ -139,7 +139,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error('فشل فك تشفير الرمز');
       }
 
-      const roles = role ? [role] : []; // Convert role string to array
       const isAdmin = Array.isArray(roles) && roles.some((r: string) => r.toLowerCase() === 'admin');
       const userData: User = {
         id: decoded.sub || '',
@@ -154,6 +153,63 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return { redirectTo };
     } catch (error: any) {
       console.error('Login failed:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => {
+    setLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
+      const response = await fetch(`${apiUrl}/api/Auth/google-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: idToken }),
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'فشل تسجيل الدخول باستخدام جوجل';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.Message || errorMessage;
+        } catch {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      console.log('Google login response:', data);
+      const { accessToken, refreshToken, roles } = data;
+
+      if (!accessToken) {
+        throw new Error('accessToken is missing in the response');
+      }
+
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken || '');
+
+      const decoded = decodeToken(accessToken);
+      if (!decoded) {
+        throw new Error('فشل فك تشفير الرمز');
+      }
+
+      const isAdmin = Array.isArray(roles) && roles.some((r: string) => r.toLowerCase() === 'admin');
+      const userData: User = {
+        id: decoded.sub || '',
+        name: decoded.email?.split('@')[0] || 'المستخدم',
+        email: decoded.email || '',
+        role: isAdmin ? 'admin' : 'user',
+        createdAt: new Date().toISOString(),
+      };
+
+      setUser(userData);
+      const redirectTo = isAdmin ? '/admin/dashboard' : '/';
+      return { redirectTo };
+    } catch (error: any) {
+      console.error('Google login failed:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -270,6 +326,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         user,
         loading,
         login,
+        googleLogin,
         register,
         logout,
         updateUserProfile,
@@ -284,4 +341,3 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     </AuthContext.Provider>
   );
 };
-
