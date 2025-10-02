@@ -22,18 +22,29 @@ const LoginPage: React.FC = () => {
     script.src = 'https://accounts.google.com/gsi/client';
     script.async = true;
     script.onload = () => {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: handleGoogleSignIn,
-        context: 'signin',
-        ux_mode: 'popup',
-      });
-      window.google.accounts.id.renderButton(
-        document.getElementById('googleSignInButton'),
-        { theme: 'outline', size: 'large', text: 'signin_with', width: '400', locale: 'ar' }
-      );
-      // Optional: Switch to One-Tap Sign-In to avoid COOP issues
-      // window.google.accounts.id.prompt();
+      if (window.google?.accounts?.id) {
+        window.google.accounts.id.initialize({
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+          callback: handleGoogleSignIn,
+          context: 'signin',
+          ux_mode: 'popup',
+          prompt: 'select_account', // Force account selection prompt
+          locale: 'ar'
+        });
+        window.google.accounts.id.renderButton(
+          document.getElementById('googleSignInButton'),
+          {
+            theme: 'outline',
+            size: 'large',
+            text: 'signin_with',
+            width: '400',
+            locale: 'ar'
+          }
+        );
+      } else {
+        console.error('Google Sign-In SDK not available');
+        setErrors({ login: 'فشل تحميل مكتبة تسجيل الدخول بجوجل' });
+      }
     };
     script.onerror = () => {
       console.error('Failed to load Google Sign-In script');
