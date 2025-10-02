@@ -30,8 +30,10 @@ const LoginPage: React.FC = () => {
       });
       window.google.accounts.id.renderButton(
         document.getElementById('googleSignInButton'),
-        { theme: 'outline', size: 'large', text: 'signin_with', width: '400' }
+        { theme: 'outline', size: 'large', text: 'signin_with', width: '400', locale: 'ar' }
       );
+      // Optional: Switch to One-Tap Sign-In to avoid COOP issues
+      // window.google.accounts.id.prompt();
     };
     script.onerror = () => {
       console.error('Failed to load Google Sign-In script');
