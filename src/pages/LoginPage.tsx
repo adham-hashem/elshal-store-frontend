@@ -4,7 +4,7 @@ import { ArrowRight, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
@@ -13,9 +13,35 @@ const LoginPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-    // Scroll to top when the component mounts
-    useEffect(() => {
+  // Scroll to top when the component mounts
+  useEffect(() => {
     window.scrollTo(0, 0);
+
+    // Load Google Sign-In script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.onload = () => {
+      window.google.accounts.id.initialize({
+        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+        callback: handleGoogleSignIn,
+        context: 'signin',
+        ux_mode: 'popup',
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById('googleSignInButton'),
+        { theme: 'outline', size: 'large', text: 'signin_with', width: '400' }
+      );
+    };
+    script.onerror = () => {
+      console.error('Failed to load Google Sign-In script');
+      setErrors({ login: 'فشل تحميل مكتبة تسجيل الدخول بجوجل' });
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
   }, []);
 
   const validateForm = () => {
@@ -44,11 +70,26 @@ const LoginPage: React.FC = () => {
 
     try {
       const { redirectTo } = await login(formData.email, formData.password);
-      // alert('تم تسجيل الدخول بنجاح!');
       const from = location.state?.from?.pathname || redirectTo;
       navigate(from, { replace: true });
     } catch (error: any) {
       setErrors({ login: error.message || 'بيانات تسجيل الدخول غير صحيحة' });
+    }
+  };
+
+  const handleGoogleSignIn = async (response: any) => {
+    try {
+      console.log('Google ID Token:', response.credential);
+      const idToken = response.credential;
+      if (!idToken) {
+        throw new Error('لم يتم استلام رمز جوجل');
+      }
+      const { redirectTo } = await googleLogin(idToken);
+      const from = location.state?.from?.pathname || redirectTo;
+      navigate(from, { replace: true });
+    } catch (error: any) {
+      console.error('Google Sign-In error:', error);
+      setErrors({ login: error.message || 'فشل تسجيل الدخول باستخدام جوجل' });
     }
   };
 
@@ -132,6 +173,10 @@ const LoginPage: React.FC = () => {
                   تسجيل دخول
                 </button>
               </form>
+
+              <div className="mt-4 text-center">
+                <div id="googleSignInButton" className="flex justify-center"></div>
+              </div>
 
               <div className="mt-6 text-center">
                 <p className="text-gray-600">
