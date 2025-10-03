@@ -161,12 +161,12 @@ const Header: React.FC = () => {
                   >
                     تسجيل دخول
                   </Link>
-                  <Link
+                  {/* <Link
                     to="/register"
                     className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors font-medium"
                   >
                     إنشاء حساب
-                  </Link>
+                  </Link> */}
                 </>
               )}
             </div>

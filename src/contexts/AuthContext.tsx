@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
 
       setUser(userData);
-      const redirectTo = isAdmin ? '/admin/dashboard' : '/';
+      const redirectTo = isAdmin ? '/admin/products' : '/';
       return { redirectTo };
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -210,7 +210,7 @@ const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => 
       };
 
       setUser(userData);
-      const redirectTo = isAdmin ? '/admin/dashboard' : '/';
+      const redirectTo = isAdmin ? '/admin/products' : '/';
       return { redirectTo };
     } catch (error: any) {
       console.error('Google login failed:', error);

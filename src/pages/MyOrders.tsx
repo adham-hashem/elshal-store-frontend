@@ -51,12 +51,12 @@ const MyOrders: React.FC = () => {
     const fetchOrders = async () => {
       try {
         if (!apiUrl) {
-          throw new Error('API base URL is not configured.');
+          throw new Error('عنوان URL الخاص بالـ API غير مكوّن.');
         }
 
         const token = localStorage.getItem('accessToken');
         if (!token) {
-          throw new Error('No access token found. Please log in again.');
+          throw new Error('لم يتم العثور على رمز الوصول. الرجاء تسجيل الدخول مرة أخرى.');
         }
 
         console.log('Fetching orders from:', `${apiUrl}/api/orders/my-orders`);
@@ -72,10 +72,10 @@ const MyOrders: React.FC = () => {
           if (response.status === 401) {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
-            throw new Error('Unauthorized: Please log in again.');
+            throw new Error('غير مصرح: الرجاء تسجيل الدخول مرة أخرى.');
           }
           const errorText = await response.text();
-          throw new Error(`Failed to fetch orders: ${response.status} ${errorText}`);
+          throw new Error(`فشل في جلب الطلبات: ${response.status} ${errorText}`);
         }
 
         const data: PaginatedOrdersResponse = await response.json();
@@ -85,7 +85,7 @@ const MyOrders: React.FC = () => {
         if (!Array.isArray(data.items)) {
           console.error('Expected an array for data.items, received:', data.items);
           setOrders([]);
-          throw new Error('Invalid response format: Expected an array of orders in data.items.');
+          throw new Error('تنسيق الاستجابة غير صالح: متوقع مصفوفة من الطلبات في data.items.');
         }
 
         // Map numeric status and paymentMethod to string values
@@ -98,7 +98,7 @@ const MyOrders: React.FC = () => {
         setOrders(mappedOrders);
       } catch (err: any) {
         console.error('Error fetching orders:', err);
-        setError(err.message || 'An error occurred while fetching orders.');
+        setError(err.message || 'حدث خطأ أثناء جلب الطلبات.');
         setOrders([]);
       } finally {
         setLoading(false);
@@ -129,7 +129,7 @@ const MyOrders: React.FC = () => {
     if (isAuthenticated) {
       fetchOrders();
     } else {
-      setError('You must be logged in to view your orders.');
+      setError('يجب عليك تسجيل الدخول لعرض طلباتك.');
       setLoading(false);
       setOrders([]);
     }
