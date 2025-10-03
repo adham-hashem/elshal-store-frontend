@@ -1,186 +1,120 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowRight, Mail, Lock } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { useApp } from '../contexts/AppContext';
+import ProductCard from '../components/ProductCard';
+import { Product } from '../types';
 
-const LoginPage: React.FC = () => {
-  const { login, googleLogin } = useAuth();
+const HomePage: React.FC = () => {
+  const { state, dispatch } = useApp();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isWelcomeVisible, setIsWelcomeVisible] = useState(false);
 
-  // Scroll to top when the component mounts
-  useEffect(() => {
+    // Scroll to top when the component mounts
+    useEffect(() => {
     window.scrollTo(0, 0);
-
-    // Load Google Sign-In script
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.onload = () => {
-      window.google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-        callback: handleGoogleSignIn,
-      });
-      window.google.accounts.id.renderButton(
-        document.getElementById('googleSignInButton'),
-        { theme: 'outline', size: 'large', text: 'signin_with', width: '400' }
-      );
-    };
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    };
   }, []);
 
-  const validateForm = () => {
-    const newErrors: { [key: string]: string } = {};
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsWelcomeVisible(true);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'البريد الإلكتروني مطلوب';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'البريد الإلكتروني غير صحيح';
-    }
-
-    if (!formData.password.trim()) {
-      newErrors.password = 'كلمة المرور مطلوبة';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  const handleViewProduct = (product: Product) => {
+    navigate(`/product/${product.id}`, { state: { product } });
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    try {
-      const { redirectTo } = await login(formData.email, formData.password);
-      const from = location.state?.from?.pathname || redirectTo;
-      navigate(from, { replace: true });
-    } catch (error: any) {
-      setErrors({ login: error.message || 'بيانات تسجيل الدخول غير صحيحة' });
+  const handleAddToCart = (product: Product) => {
+    if (product.sizes.length > 0 || product.colors.length > 0) {
+      navigate(`/product/${product.id}`, { state: { product } });
+    } else {
+      dispatch({
+        type: 'ADD_TO_CART',
+        payload: {
+          product,
+          quantity: 1,
+          selectedSize: product.sizes[0] || '',
+          selectedColor: product.colors[0] || ''
+        }
+      });
     }
   };
 
-  const handleGoogleSignIn = async (response: any) => {
-    try {
-      const idToken = response.credential;
-      const { redirectTo } = await googleLogin(idToken);
-      const from = location.state?.from?.pathname || redirectTo;
-      navigate(from, { replace: true });
-    } catch (error: any) {
-      setErrors({ login: error.message || 'فشل تسجيل الدخول باستخدام جوجل' });
-    }
-  };
+  const featuredProducts = state.products.slice(0, 8);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
-        <Link
-          to="/"
-          className="flex items-center space-x-reverse space-x-2 text-gray-600 hover:text-pink-600 mb-6 transition-colors"
-        >
-          <ArrowRight size={20} />
-          <span>العودة للرئيسية</span>
-        </Link>
-
-        <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            {/* Logo */}
-            <div className="bg-gradient-to-l from-pink-600 to-purple-600 p-6 text-center">
-              <img 
-                src="/اللجو.jpg" 
-                alt="الشال" 
-                className="h-16 w-16 mx-auto mb-3 object-contain"
-              />
-              <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'serif' }}>
-                الشال
-              </h1>
-              <p className="text-pink-100">تسجيل الدخول</p>
-            </div>
-
-            <div className="p-6">
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    البريد الإلكتروني *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      placeholder="example@alshal.com"
-                      className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right ${
-                        errors.email ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      dir="rtl"
-                    />
-                  </div>
-                  {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    كلمة المرور *
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      className={`w-full pr-10 pl-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right ${
-                        errors.password ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      dir="rtl"
-                    />
-                  </div>
-                  {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-                </div>
-
-                {errors.login && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-red-600 text-sm text-center">{errors.login}</p>
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="w-full bg-pink-600 text-white py-3 rounded-lg hover:bg-pink-700 transition-colors font-semibold"
-                >
-                  تسجيل دخول
-                </button>
-              </form>
-
-              <div className="mt-4 text-center">
-                <div id="googleSignInButton" className="flex justify-center"></div>
-              </div>
-
-              <div className="mt-6 text-center">
-                <p className="text-gray-600">
-                  ليس لديك حساب؟{' '}
-                  <Link to="/register" className="text-pink-600 hover:text-pink-700 font-semibold">
-                    إنشاء حساب جديد
-                  </Link>
-                </p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="relative">
+        <img
+          src="/الصورة الرئسية.jpg"
+          alt="الشال للملابس الراقية"
+          className="w-full h-96 md:h-[500px] object-cover"
+        />
+        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center">
+          <div className="text-center text-white px-4">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4" style={{ fontFamily: 'serif' }}>
+              الشال
+            </h1>
+            <p className="text-xl md:text-2xl">للملابس الراقية</p>
           </div>
+        </div>
+      </div>
+
+      {/* Welcome Message */}
+      <div className="container mx-auto px-4 py-12">
+        <div
+          className={`bg-gradient-to-l from-pink-50 to-purple-50 rounded-2xl p-8 shadow-lg border border-pink-200 transform transition-all duration-1000 ${
+            isWelcomeVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+          }`}
+        >
+          <div className="text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-6 leading-relaxed">
+              مرحباً بكم في الشال للملابس الراقية
+            </h2>
+            <p className="text-lg md:text-xl text-gray-700 leading-relaxed text-right">
+              في الشال للملابس الراقية هتلاقي كل اللي يهمك إنتي وولادك.. من اللبس الحريمي الراقي لحد البيتي المريح، وكمان الكاجوال العصري والليدي الكلاسيك.
+              <br /><br />
+              مش بس كده، عندنا لبس أطفال بيتي وخروج يخليهم دايمًا شيك ومرتاحين.
+              <br /><br />
+              مع الشال، كل قطعة معمولة بذوق وخامة حلوة علشان كل يوم يبقى استايل جديد ليكي وللصغيرين.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Featured Products */}
+      <div className="container mx-auto px-4 pb-12">
+        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">منتجاتنا المميزة</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {featuredProducts.map(product => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onViewProduct={handleViewProduct}
+              onAddToCart={handleAddToCart}
+            />
+          ))}
+        </div>
+        
+        <div className="text-center mt-8">
+          <button
+            onClick={() => navigate('/women')}
+            className="bg-pink-600 text-white px-8 py-3 rounded-lg hover:bg-pink-700 transition-colors font-semibold mx-2"
+          >
+            تصفح قسم الحريمي
+          </button>
+          <button
+            onClick={() => navigate('/children')}
+            className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold mx-2"
+          >
+            تصفح قسم الأطفال
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-export default LoginPage;
+export default HomePage;
