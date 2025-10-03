@@ -159,14 +159,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => {
+const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${apiUrl}/api/auth/google-login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: idToken }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ Token: idToken }),
       });
 
       if (!response.ok) {

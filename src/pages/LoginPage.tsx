@@ -5,6 +5,28 @@ import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const { login, googleLogin } = useAuth();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
@@ -13,7 +35,7 @@ const LoginPage: React.FC = () => {
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Scroll to top when the component mounts
+  // Scroll to top and initialize Google Sign-In
   useEffect(() => {
     window.scrollTo(0, 0);
 
@@ -23,24 +45,32 @@ const LoginPage: React.FC = () => {
     script.async = true;
     script.onload = () => {
       if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-          callback: handleGoogleSignIn,
-          context: 'signin',
-          ux_mode: 'popup',
-          prompt: 'select_account', // Force account selection prompt
-          locale: 'ar'
-        });
-        window.google.accounts.id.renderButton(
-          document.getElementById('googleSignInButton'),
-          {
-            theme: 'outline',
-            size: 'large',
-            text: 'signin_with',
-            width: '400',
+        try {
+          window.google.accounts.id.initialize({
+            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || '',
+            callback: handleGoogleSignIn,
+            context: 'signin',
+            ux_mode: 'popup',
+            prompt: 'select_account', // Force account selection prompt
             locale: 'ar'
+          });
+          const buttonElement = document.getElementById('googleSignInButton');
+          if (buttonElement) {
+            window.google.accounts.id.renderButton(buttonElement, {
+              theme: 'outline',
+              size: 'large',
+              text: 'signin_with',
+              width: '400',
+              locale: 'ar'
+            });
+          } else {
+            console.error('Google Sign-In button element not found');
+            setErrors({ login: 'فشل عرض زر تسجيل الدخول بجوجل' });
           }
-        );
+        } catch (error) {
+          console.error('Google Sign-In initialization failed:', error);
+          setErrors({ login: 'فشل تهيئة تسجيل الدخول بجوجل' });
+        }
       } else {
         console.error('Google Sign-In SDK not available');
         setErrors({ login: 'فشل تحميل مكتبة تسجيل الدخول بجوجل' });
@@ -90,7 +120,7 @@ const LoginPage: React.FC = () => {
     }
   };
 
-  const handleGoogleSignIn = async (response: any) => {
+  const handleGoogleSignIn = async (response: { credential: string }) => {
     try {
       console.log('Google ID Token:', response.credential);
       const idToken = response.credential;
