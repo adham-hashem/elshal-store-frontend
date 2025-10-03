@@ -23,7 +23,7 @@ import OffersPage from './pages/OffersPage';
 import NotFoundPage from './pages/NotFoundPage';
 import MyOrders from './pages/MyOrders';
 import OrderDetails from './pages/OrderDetails';
-import RegisterPage from './pages/RegisterPage';
+// import RegisterPage from './pages/RegisterPage';
 
 // Admin Pages
 import AdminPage from './pages/admin/AdminPage';
@@ -121,7 +121,7 @@ function AppContent() {
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            {/* <Route path="/register" element={<RegisterPage />} /> */}
             <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
             <Route path="/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />

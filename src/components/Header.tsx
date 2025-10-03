@@ -26,7 +26,7 @@ const Header: React.FC = () => {
       setIsLoading(true);
       setSearchError(null);
 
-      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://elshal.runasp.net';
+      const apiUrl = import.meta.env.VITE_API_BASE_URL;
       console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL); // Debug log
       console.log('API URL:', `${apiUrl}/api/products/code/${searchCode.trim()}`); // Debug log
 
@@ -319,13 +319,13 @@ const Header: React.FC = () => {
                 >
                   تسجيل دخول
                 </Link>
-                <Link
+                {/* <Link
                   to="/register"
                   onClick={() => setIsMenuOpen(false)}
                   className="block text-center py-3 px-4 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors font-medium"
                 >
                   إنشاء حساب
-                </Link>
+                </Link> */}
               </div>
             )}
           </div>
