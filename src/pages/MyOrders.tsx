@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { Package, Eye } from 'lucide-react';
@@ -46,6 +46,7 @@ const MyOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -129,11 +130,9 @@ const MyOrders: React.FC = () => {
     if (isAuthenticated) {
       fetchOrders();
     } else {
-      setError('يجب عليك تسجيل الدخول لعرض طلباتك.');
-      setLoading(false);
-      setOrders([]);
+      navigate('/login');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, navigate]);
 
   // Helper function to get status text
   const getStatusText = (status: string) => {
