@@ -3,6 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
 const LoginPage = () => {
   const { googleLogin } = useAuth();
   const navigate = useNavigate();
@@ -24,7 +26,7 @@ const LoginPage = () => {
             callback: handleGoogleSignIn,
             context: 'signin',
             ux_mode: 'popup',
-            prompt: 'select_account', // Force account selection prompt
+            prompt: 'select_account',
             locale: 'ar'
           });
           const buttonElement = document.getElementById('googleSignInButton');
@@ -63,8 +65,18 @@ const LoginPage = () => {
       if (!idToken) {
         throw new Error('لم يتم استلام رمز جوجل');
       }
-      const { redirectTo } = await googleLogin(idToken);
-      const from = location.state?.from?.pathname || redirectTo;
+      
+      const loginResponse = await googleLogin(idToken);
+      console.log('Login response:', loginResponse);
+      
+      // Check if user is admin and trigger FCM registration
+      if (loginResponse.roles && loginResponse.roles.includes('Admin')) {
+        console.log('Admin user detected, will trigger FCM registration after navigation');
+        // Store a flag to trigger FCM registration
+        sessionStorage.setItem('triggerFCM', 'true');
+      }
+      
+      const from = location.state?.from?.pathname || loginResponse.redirectTo;
       navigate(from, { replace: true });
     } catch (error) {
       console.error('Google Sign-In error:', error);
@@ -104,15 +116,6 @@ const LoginPage = () => {
                 style={{ transform: 'scale(1.2)', margin: '2rem 0' }}
               ></div>
             </div>
-
-            {/* <div className="mt-8 text-center">
-              <p className="text-gray-600 text-lg">
-                ليس لديك حساب؟{' '}
-                <Link to="/register" className="text-pink-600 hover:text-pink-700 font-semibold">
-                  إنشاء حساب جديد
-                </Link>
-              </p>
-            </div> */}
           </div>
         </div>
       </div>

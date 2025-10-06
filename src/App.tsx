@@ -83,10 +83,40 @@ function AppContent() {
     let isMounted = true;
 
     const initializeFCM = async () => {
-      // Only register for Admin users
-      if (!user || !user.role?.includes('Admin')) {
+      // Check session storage flag set during login
+      const shouldTriggerFCM = sessionStorage.getItem('triggerFCM');
+      
+      // Check if user is logged in
+      if (!user) {
+        console.log('No user logged in, skipping FCM registration');
+        return;
+      }
+
+      // Get the access token to verify authentication
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        console.log('No access token found, skipping FCM registration');
+        return;
+      }
+
+      // Check if user has Admin role
+      const isAdmin = user.role?.includes('Admin') || user.role?.includes('admin');
+      console.log('User role check:', { 
+        user, 
+        roles: user.role, 
+        isAdmin,
+        hasAccessToken: !!accessToken,
+        shouldTriggerFCM: !!shouldTriggerFCM
+      });
+
+      if (!isAdmin) {
         console.log('User is not admin, skipping FCM registration');
         return;
+      }
+
+      // Clear the flag
+      if (shouldTriggerFCM) {
+        sessionStorage.removeItem('triggerFCM');
       }
 
       try {
@@ -115,10 +145,10 @@ function AppContent() {
       }
     };
 
-    // Add a small delay to ensure auth state is fully settled
+    // Add a delay to ensure user data is fully loaded from backend
     const timeoutId = setTimeout(() => {
       initializeFCM();
-    }, 500);
+    }, 1000);
 
     return () => {
       isMounted = false;
