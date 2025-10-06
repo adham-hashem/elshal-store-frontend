@@ -69,13 +69,6 @@ const LoginPage = () => {
       const loginResponse = await googleLogin(idToken);
       console.log('Login response:', loginResponse);
       
-      // Check if user is admin and trigger FCM registration
-      if (loginResponse.roles && loginResponse.roles.includes('Admin')) {
-        console.log('Admin user detected, will trigger FCM registration after navigation');
-        // Store a flag to trigger FCM registration
-        sessionStorage.setItem('triggerFCM', 'true');
-      }
-      
       const from = location.state?.from?.pathname || loginResponse.redirectTo;
       navigate(from, { replace: true });
     } catch (error) {
