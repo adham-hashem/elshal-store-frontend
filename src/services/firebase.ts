@@ -1,5 +1,8 @@
+// src/services/firebase.ts
+
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken, onMessage, MessagePayload } from 'firebase/messaging';
+import { Unsubscribe } from '@firebase/util';
 
 // Firebase configuration using environment variables
 const firebaseConfig = {
@@ -38,8 +41,8 @@ export async function requestNotificationPermission(): Promise<string | null> {
 }
 
 // Handle foreground messages
-export function onForegroundMessage(cb: (payload: MessagePayload) => void): void {
-  onMessage(messaging, (payload: MessagePayload) => {
+export function onForegroundMessage(cb: (payload: MessagePayload) => void): Unsubscribe {
+  return onMessage(messaging, (payload: MessagePayload) => {
     console.log('Foreground message received:', payload);
     cb(payload);
   });

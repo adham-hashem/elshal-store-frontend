@@ -1,15 +1,15 @@
-import React, { useEffect, useCallback } from 'react';
+// src/App.tsx
+
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './contexts/AppContext';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { requestNotificationPermission, onForegroundMessage } from './services/firebase';
-
-const apiUrl = import.meta.env.VITE_API_BASE_URL;
+import { onForegroundMessage } from './services/firebase';
 
 // Public Pages
 import HomePage from './pages/HomePage';
@@ -31,140 +31,33 @@ import OrdersManagement from './pages/admin/OrdersManagement';
 import CustomersManagement from './pages/admin/CustomersManagement';
 import DiscountCodesManagement from './pages/admin/DiscountCodesManagement';
 import ShippingManagement from './pages/admin/ShippingManagement';
+import { Unsubscribe } from 'firebase/messaging';
 
 function AppContent() {
-  const { user } = useAuth();
+  // 🚨 THE PROBLEMATIC useEffect FOR FCM REGISTRATION HAS BEEN REMOVED. 🚨
+  // Its logic is now correctly placed in NotificationButton.tsx
 
-  // Register FCM token with backend
-  const registerFCMToken = useCallback(async (token: string) => {
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        console.error('No access token found');
-        return;
-      }
-
-      const response = await fetch(`${apiUrl}/api/notification/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to register notification token');
-      }
-
-      const data = await response.json();
-      console.log('FCM token registered successfully:', data);
-      toast.success('تم تسجيل إشعارات الجهاز بنجاح', {
-        position: 'top-right',
-        autoClose: 3000,
-      });
-    } catch (error) {
-      console.error('Error registering FCM token:', error);
-      toast.error(
-        error instanceof Error
-          ? `فشل تسجيل إشعارات الجهاز: ${error.message}`
-          : 'فشل تسجيل إشعارات الجهاز',
-        {
-          position: 'top-right',
-          autoClose: 5000,
-        }
-      );
-    }
-  }, []);
-
-  // Handle FCM token registration for admin users
+  // Handle foreground notifications (This part is correct and should remain)
   useEffect(() => {
-    let isMounted = true;
-
-    const initializeFCM = async () => {
-      // Check session storage flag set during login
-      const shouldTriggerFCM = sessionStorage.getItem('triggerFCM');
-      
-      // Check if user is logged in
-      if (!user) {
-        console.log('No user logged in, skipping FCM registration');
-        return;
-      }
-
-      // Get the access token to verify authentication
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        console.log('No access token found, skipping FCM registration');
-        return;
-      }
-
-      // Check if user has Admin role
-      const isAdmin = user.role?.includes('Admin') || user.role?.includes('admin');
-      console.log('User role check:', { 
-        user, 
-        roles: user.role, 
-        isAdmin,
-        hasAccessToken: !!accessToken,
-        shouldTriggerFCM: !!shouldTriggerFCM
-      });
-
-      if (!isAdmin) {
-        console.log('User is not admin, skipping FCM registration');
-        return;
-      }
-
-      // Clear the flag
-      if (shouldTriggerFCM) {
-        sessionStorage.removeItem('triggerFCM');
-      }
-
-      try {
-        console.log('Requesting FCM notification permission for admin...');
-        const token = await requestNotificationPermission();
-        
-        if (!isMounted) return;
-
-        if (token) {
-          console.log('FCM token received:', token);
-          await registerFCMToken(token);
-        } else {
-          console.warn('No FCM token received');
-          toast.warn('لم يتم الحصول على رمز الإشعارات. قد لا تتلقى إشعارات.', {
-            position: 'top-right',
-            autoClose: 5000,
-          });
-        }
-      } catch (error) {
-        if (!isMounted) return;
-        console.error('Error initializing FCM:', error);
-        toast.error('فشل طلب إذن الإشعارات. قد لا تتلقى إشعارات.', {
+    let unsubscribe: Unsubscribe | undefined;
+    
+    // Check for notification support before subscribing
+    if ('Notification' in window) {
+      unsubscribe = onForegroundMessage((payload) => {
+        const { notification } = payload;
+        toast.info(<div><strong>{notification?.title}</strong><br/>{notification?.body}</div>, {
           position: 'top-right',
-          autoClose: 5000,
+          autoClose: 6000,
         });
+      });
+    }
+
+    // Cleanup subscription on component unmount
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
       }
     };
-
-    // Add a delay to ensure user data is fully loaded from backend
-    const timeoutId = setTimeout(() => {
-      initializeFCM();
-    }, 1000);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
-  }, [user, registerFCMToken]);
-
-  // Handle foreground notifications
-  useEffect(() => {
-    onForegroundMessage((payload) => {
-      const { notification } = payload;
-      toast.info(`${notification?.title}: ${notification?.body}`, {
-        position: 'top-right',
-        autoClose: 5000,
-      });
-    });
   }, []);
 
   return (
@@ -217,7 +110,7 @@ function AppContent() {
   );
 }
 
-function App() {
+const App: React.FC = () => {
   return (
     <AuthProvider>
       <AppProvider>

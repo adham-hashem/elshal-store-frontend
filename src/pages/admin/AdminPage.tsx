@@ -1,7 +1,10 @@
+// src/pages/admin/AdminPage.tsx
+
 import React from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { ArrowRight, Package, Users, ShoppingCart, LogOut, Tag, Truck } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import NotificationButton from '../../components/NotificationButton'; // ✨ 1. IMPORT THE BUTTON
 
 const AdminPage: React.FC = () => {
   const { logout } = useAuth();
@@ -10,7 +13,8 @@ const AdminPage: React.FC = () => {
   const handleLogout = () => {
     logout();
     navigate('/');
-    alert('تم تسجيل خروج المدير بنجاح');
+    // Use toast for notifications instead of alert for better UX
+    // toast.success('تم تسجيل خروج المدير بنجاح');
   };
 
   return (
@@ -29,6 +33,10 @@ const AdminPage: React.FC = () => {
               </div>
             </div>
             <div className="flex items-center space-x-reverse space-x-4">
+              
+              {/* ✨ 2. ADD THE BUTTON HERE ✨ */}
+              <NotificationButton />
+
               <Link
                 to="/"
                 className="flex items-center space-x-reverse space-x-2 text-gray-600 hover:text-pink-600 transition-colors"
