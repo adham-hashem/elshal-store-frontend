@@ -23,13 +23,17 @@ try {
 
   messaging.onBackgroundMessage((payload) => {
     console.log('[firebase-messaging-sw.js] Received background message:', payload);
-    const notificationTitle = payload.notification.title;
+    const notificationTitle = payload.notification?.title || 'إشعار جديد';
     const notificationOptions = {
-      body: payload.notification.body,
-      icon: '/logo.jpg', // Ensure this image exists in public/
+      body: payload.notification?.body || '',
+      icon: '/اللجو.jpg',
+      badge: '/اللجو.jpg',
+      tag: 'elshal-notification',
+      requireInteraction: false,
+      vibrate: [200, 100, 200]
     };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    
+    return self.registration.showNotification(notificationTitle, notificationOptions);
   });
 } catch (error) {
   console.error('Error in firebase-messaging-sw.js:', error);
