@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -8,8 +8,6 @@ import Footer from './components/Footer';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { requestNotificationPermission, onForegroundMessage } from './services/firebase';
-
-const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 // Public Pages
 import HomePage from './pages/HomePage';
@@ -23,79 +21,87 @@ import OffersPage from './pages/OffersPage';
 import NotFoundPage from './pages/NotFoundPage';
 import MyOrders from './pages/MyOrders';
 import OrderDetails from './pages/OrderDetails';
-// import RegisterPage from './pages/RegisterPage';
-
-// Admin Pages
-import AdminPage from './pages/admin/AdminPage';
-import ProductsManagement from './pages/admin/ProductsManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
-import CustomersManagement from './pages/admin/CustomersManagement';
 import DiscountCodesManagement from './pages/admin/DiscountCodesManagement';
 import ShippingManagement from './pages/admin/ShippingManagement';
+import CustomersManagement from './pages/admin/CustomersManagement';
+import ProductsManagement from './pages/admin/ProductsManagement';
+import AdminPage from './pages/admin/AdminPage';
+
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 function AppContent() {
   const { user } = useAuth();
 
-  useEffect(() => {
-    // Register FCM token only for users with Admin role
-    if (user && user.role?.includes('Admin')) {
-      requestNotificationPermission().then((token) => {
-        if (token) {
-          const tokenRequest = async () => {
-            try {
-              const response = await fetch(`${apiUrl}/api/notification/register`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                },
-                body: JSON.stringify({ token }),
-              });
+  // Function to register FCM token
+  const registerFCMToken = useCallback(async () => {
+    if (!user || !user.role?.includes('Admin')) {
+      return; // Exit if user is not an admin
+    }
 
-              if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to register notification token');
-              }
-
-              const data = await response.json();
-              console.log('Token sent to server:', data);
-              toast.success('تم تسجيل إشعارات الجهاز بنجاح', {
-                position: 'top-right',
-                autoClose: 3000,
-              });
-            } catch (error) {
-              console.error('Error sending token to server:', error);
-              toast.error(
-                error instanceof Error
-                  ? `فشل تسجيل إشعارات الجهاز: ${error.message}`
-                  : 'فشل تسجيل إشعارات الجهاز',
-                {
-                  position: 'top-right',
-                  autoClose: 5000,
-                }
-              );
-            }
-          };
-          tokenRequest();
-        } else {
-          console.warn('No FCM token received');
-          toast.warn('لم يتم الحصول على رمز الإشعارات. قد لا تتلقى إشعارات.', {
+    try {
+      const token = await requestNotificationPermission();
+      if (token) {
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          console.warn('No access token found for FCM registration');
+          toast.warn('لم يتم العثور على رمز الوصول. قد لا يتم تسجيل الإشعارات.', {
             position: 'top-right',
             autoClose: 5000,
           });
+          return;
         }
-      }).catch((error) => {
-        console.error('Error requesting notification permission:', error);
-        toast.error('فشل طلب إذن الإشعارات. قد لا تتلقى إشعارات.', {
+
+        const response = await fetch(`${apiUrl}/api/notification/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ token, userType: 'admin' }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to register notification token');
+        }
+
+        const data = await response.json();
+        console.log('Token sent to server:', data);
+        toast.success('تم تسجيل إشعارات الجهاز بنجاح', {
+          position: 'top-right',
+          autoClose: 3000,
+        });
+      } else {
+        console.warn('No FCM token received');
+        toast.warn('لم يتم الحصول على رمز الإشعارات. قد لا تتلقى إشعارات.', {
           position: 'top-right',
           autoClose: 5000,
         });
-      });
+      }
+    } catch (error) {
+      console.error('Error registering FCM token:', error);
+      toast.error(
+        error instanceof Error
+          ? `فشل تسجيل إشعارات الجهاز: ${error.message}`
+          : 'فشل تسجيل إشعارات الجهاز',
+        {
+          position: 'top-right',
+          autoClose: 5000,
+        }
+      );
     }
   }, [user]);
 
+  // Trigger FCM registration when user changes (e.g., after login)
   useEffect(() => {
-    // Handle foreground notifications for all users
+    if (user && user.role?.includes('Admin')) {
+      registerFCMToken();
+    }
+  }, [user, registerFCMToken]);
+
+  // Handle foreground notifications
+  useEffect(() => {
     onForegroundMessage((payload) => {
       const { notification } = payload;
       toast.info(`${notification?.title}: ${notification?.body}`, {
@@ -121,7 +127,6 @@ function AppContent() {
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/login" element={<LoginPage />} />
-            {/* <Route path="/register" element={<RegisterPage />} /> */}
             <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
             <Route path="/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />
