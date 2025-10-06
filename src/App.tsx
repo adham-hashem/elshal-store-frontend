@@ -9,6 +9,8 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { requestNotificationPermission, onForegroundMessage } from './services/firebase';
 
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
 // Public Pages
 import HomePage from './pages/HomePage';
 import ProductPage from './pages/ProductPage';
@@ -21,64 +23,47 @@ import OffersPage from './pages/OffersPage';
 import NotFoundPage from './pages/NotFoundPage';
 import MyOrders from './pages/MyOrders';
 import OrderDetails from './pages/OrderDetails';
+
+// Admin Pages
+import AdminPage from './pages/admin/AdminPage';
+import ProductsManagement from './pages/admin/ProductsManagement';
 import OrdersManagement from './pages/admin/OrdersManagement';
+import CustomersManagement from './pages/admin/CustomersManagement';
 import DiscountCodesManagement from './pages/admin/DiscountCodesManagement';
 import ShippingManagement from './pages/admin/ShippingManagement';
-import CustomersManagement from './pages/admin/CustomersManagement';
-import ProductsManagement from './pages/admin/ProductsManagement';
-import AdminPage from './pages/admin/AdminPage';
-
-const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 function AppContent() {
   const { user } = useAuth();
 
-  // Function to register FCM token
-  const registerFCMToken = useCallback(async () => {
-    if (!user || !user.role?.includes('Admin')) {
-      return; // Exit if user is not an admin
-    }
-
+  // Register FCM token with backend
+  const registerFCMToken = useCallback(async (token: string) => {
     try {
-      const token = await requestNotificationPermission();
-      if (token) {
-        const accessToken = localStorage.getItem('accessToken');
-        if (!accessToken) {
-          console.warn('No access token found for FCM registration');
-          toast.warn('لم يتم العثور على رمز الوصول. قد لا يتم تسجيل الإشعارات.', {
-            position: 'top-right',
-            autoClose: 5000,
-          });
-          return;
-        }
-
-        const response = await fetch(`${apiUrl}/api/notification/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ token, userType: 'admin' }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to register notification token');
-        }
-
-        const data = await response.json();
-        console.log('Token sent to server:', data);
-        toast.success('تم تسجيل إشعارات الجهاز بنجاح', {
-          position: 'top-right',
-          autoClose: 3000,
-        });
-      } else {
-        console.warn('No FCM token received');
-        toast.warn('لم يتم الحصول على رمز الإشعارات. قد لا تتلقى إشعارات.', {
-          position: 'top-right',
-          autoClose: 5000,
-        });
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        console.error('No access token found');
+        return;
       }
+
+      const response = await fetch(`${apiUrl}/api/notification/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ token }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to register notification token');
+      }
+
+      const data = await response.json();
+      console.log('FCM token registered successfully:', data);
+      toast.success('تم تسجيل إشعارات الجهاز بنجاح', {
+        position: 'top-right',
+        autoClose: 3000,
+      });
     } catch (error) {
       console.error('Error registering FCM token:', error);
       toast.error(
@@ -91,13 +76,54 @@ function AppContent() {
         }
       );
     }
-  }, [user]);
+  }, []);
 
-  // Trigger FCM registration when user changes (e.g., after login)
+  // Handle FCM token registration for admin users
   useEffect(() => {
-    if (user && user.role?.includes('Admin')) {
-      registerFCMToken();
-    }
+    let isMounted = true;
+
+    const initializeFCM = async () => {
+      // Only register for Admin users
+      if (!user || !user.role?.includes('Admin')) {
+        console.log('User is not admin, skipping FCM registration');
+        return;
+      }
+
+      try {
+        console.log('Requesting FCM notification permission for admin...');
+        const token = await requestNotificationPermission();
+        
+        if (!isMounted) return;
+
+        if (token) {
+          console.log('FCM token received:', token);
+          await registerFCMToken(token);
+        } else {
+          console.warn('No FCM token received');
+          toast.warn('لم يتم الحصول على رمز الإشعارات. قد لا تتلقى إشعارات.', {
+            position: 'top-right',
+            autoClose: 5000,
+          });
+        }
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('Error initializing FCM:', error);
+        toast.error('فشل طلب إذن الإشعارات. قد لا تتلقى إشعارات.', {
+          position: 'top-right',
+          autoClose: 5000,
+        });
+      }
+    };
+
+    // Add a small delay to ensure auth state is fully settled
+    const timeoutId = setTimeout(() => {
+      initializeFCM();
+    }, 500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [user, registerFCMToken]);
 
   // Handle foreground notifications
