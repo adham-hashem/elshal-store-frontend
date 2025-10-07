@@ -11,7 +11,7 @@ interface OrderNotification {
   sentAt: string;
   success: boolean;
   errorMessage: string | null;
-  isRead: boolean; // Assuming this will be added to the backend
+  isRead: boolean;
 }
 
 interface PaginatedNotificationsResponse {
@@ -114,7 +114,7 @@ const OrderNotifications: React.FC = () => {
       }
 
       const response = await fetch(`${apiUrl}/api/OrderNotifications/${notificationId}/mark-as-read`, {
-        method: 'PATCH',
+        method: 'POST', // Changed from PATCH to POST
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -122,7 +122,8 @@ const OrderNotifications: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to mark notification as read.');
+        const errorText = await response.text();
+        throw new Error(`Failed to mark notification as read: ${response.status} ${errorText}`);
       }
 
       setNotifications((prev) =>
@@ -135,7 +136,7 @@ const OrderNotifications: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error marking notification as read:', err);
-      setError(err.message || 'An error occurred while marking notification as read.');
+      setError(err.message || 'An error occurred while marking notification as read. Please try again or contact support.');
     }
   };
 
