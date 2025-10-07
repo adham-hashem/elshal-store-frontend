@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, Check } from 'lucide-react';
 
 // OrderNotification interface matching the backend response
 interface OrderNotification {
   id: string;
   orderId: string;
-  message: string;
-  createdAt: string;
-  isRead: boolean;
+  title: string;
+  body: string;
+  sentAt: string;
+  success: boolean;
+  errorMessage: string | null;
+  isRead: boolean; // Assuming this will be added to the backend
 }
 
 interface PaginatedNotificationsResponse {
@@ -28,6 +31,7 @@ const OrderNotifications: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
   useEffect(() => {
@@ -68,7 +72,14 @@ const OrderNotifications: React.FC = () => {
           throw new Error('Invalid response format: Expected an array of notifications.');
         }
 
-        setNotifications(data.items);
+        // Map backend response to frontend interface (handle missing isRead)
+        const mappedNotifications = data.items.map((item) => ({
+          ...item,
+          isRead: item.isRead ?? false, // Default to false if isRead is not provided
+        }));
+
+        setNotifications(mappedNotifications);
+        setTotalPages(data.totalPages);
       } catch (err: any) {
         console.error('Error fetching notifications:', err);
         setError(err.message || 'An error occurred while fetching notifications.');
@@ -93,6 +104,39 @@ const OrderNotifications: React.FC = () => {
 
   const handleCloseDetails = () => {
     setSelectedNotification(null);
+  };
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('No access token found. Please log in again.');
+      }
+
+      const response = await fetch(`${apiUrl}/api/OrderNotifications/${notificationId}/mark-as-read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark notification as read.');
+      }
+
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, isRead: true } : n
+        )
+      );
+      if (selectedNotification?.id === notificationId) {
+        setSelectedNotification({ ...selectedNotification, isRead: true });
+      }
+    } catch (err: any) {
+      console.error('Error marking notification as read:', err);
+      setError(err.message || 'An error occurred while marking notification as read.');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -132,25 +176,50 @@ const OrderNotifications: React.FC = () => {
               <span className="text-gray-900">{selectedNotification.orderId}</span>
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
+              <span className="text-gray-500 font-medium">العنوان:</span>
+              <span className="text-gray-900">{selectedNotification.title}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">الرسالة:</span>
-              <span className="text-gray-900">{selectedNotification.message}</span>
+              <span className="text-gray-900">{selectedNotification.body}</span>
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">تاريخ الإنشاء:</span>
-              <span className="text-gray-900">{formatDate(selectedNotification.createdAt)}</span>
+              <span className="text-gray-900">{formatDate(selectedNotification.sentAt)}</span>
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">الحالة:</span>
               <span className="text-gray-900">{selectedNotification.isRead ? 'مقروء' : 'غير مقروء'}</span>
             </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <span className="text-gray-500 font-medium">نجاح الإرسال:</span>
+              <span className="text-gray-900">{selectedNotification.success ? 'نعم' : 'لا'}</span>
+            </div>
+            {selectedNotification.errorMessage && (
+              <div className="flex flex-col sm:flex-row sm:justify-between">
+                <span className="text-gray-500 font-medium">رسالة الخطأ:</span>
+                <span className="text-gray-900">{selectedNotification.errorMessage}</span>
+              </div>
+            )}
           </div>
-          <button
-            onClick={handleCloseDetails}
-            className="mt-4 bg-gray-300 text-gray-700 px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center text-sm sm:text-base"
-          >
-            <X className="h-4 w-4 ml-2" />
-            إغلاق
-          </button>
+          <div className="mt-4 flex space-x-4 space-x-reverse">
+            {!selectedNotification.isRead && (
+              <button
+                onClick={() => handleMarkAsRead(selectedNotification.id)}
+                className="bg-green-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center text-sm sm:text-base"
+              >
+                <Check className="h-4 w-4 ml-2" />
+                تحديد كمقروء
+              </button>
+            )}
+            <button
+              onClick={handleCloseDetails}
+              className="bg-gray-300 text-gray-700 px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center text-sm sm:text-base"
+            >
+              <X className="h-4 w-4 ml-2" />
+              إغلاق
+            </button>
+          </div>
         </div>
       ) : notifications.length > 0 ? (
         <>
@@ -161,9 +230,11 @@ const OrderNotifications: React.FC = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">رقم الطلب</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العنوان</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الرسالة</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ الإنشاء</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نجاح الإرسال</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
                   </tr>
                 </thead>
@@ -171,10 +242,14 @@ const OrderNotifications: React.FC = () => {
                   {notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{notification.orderId}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.message}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(notification.createdAt)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.title}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.body}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(notification.sentAt)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {notification.isRead ? 'مقروء' : 'غير مقروء'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {notification.success ? 'نعم' : 'لا'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
@@ -202,7 +277,8 @@ const OrderNotifications: React.FC = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{notification.orderId}</p>
-                    <p className="text-xs text-gray-500">{notification.message}</p>
+                    <p className="text-xs text-gray-500">{notification.title}</p>
+                    <p className="text-xs text-gray-500">{notification.body}</p>
                   </div>
                   <button
                     onClick={() => handleViewNotification(notification)}
@@ -215,15 +291,40 @@ const OrderNotifications: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500">تاريخ الإنشاء:</span>
-                    <span className="text-xs text-gray-900">{formatDate(notification.createdAt)}</span>
+                    <span className="text-xs text-gray-900">{formatDate(notification.sentAt)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500">الحالة:</span>
                     <span className="text-xs text-gray-900">{notification.isRead ? 'مقروء' : 'غير مقروء'}</span>
                   </div>
+                  <div className="flex justify-between">
+                    <span className="text-xs text-gray-500">نجاح الإرسال:</span>
+                    <span className="text-xs text-gray-900">{notification.success ? 'نعم' : 'لا'}</span>
+                  </div>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="mt-6 flex justify-between items-center">
+            <button
+              onClick={() => setPageNumber((prev) => Math.max(prev - 1, 1))}
+              disabled={pageNumber === 1}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50"
+            >
+              السابق
+            </button>
+            <span className="text-gray-600">
+              الصفحة {pageNumber} من {totalPages}
+            </span>
+            <button
+              onClick={() => setPageNumber((prev) => Math.min(prev + 1, totalPages))}
+              disabled={pageNumber === totalPages}
+              className="bg-gray-300 text-gray-700 px-4 py-2 rounded-lg disabled:opacity-50"
+            >
+              التالي
+            </button>
           </div>
         </>
       ) : (
