@@ -114,7 +114,7 @@ const OrderNotifications: React.FC = () => {
       }
 
       const response = await fetch(`${apiUrl}/api/OrderNotifications/${notificationId}/mark-as-read`, {
-        method: 'POST', // Changed from PATCH to POST
+        method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
