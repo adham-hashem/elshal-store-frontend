@@ -63,6 +63,17 @@ const AdminPage: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <nav className="space-y-2">
                 <NavLink
+                  to="/admin/notifications"
+                  className={({ isActive }) =>
+                    `w-full flex items-center space-x-reverse space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      isActive ? 'bg-pink-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+                    }`
+                  }
+                >
+                  <Package size={20} />
+                  <span>إشعارات الطلبات</span>
+                </NavLink>
+                <NavLink
                   to="/admin/products"
                   className={({ isActive }) =>
                     `w-full flex items-center space-x-reverse space-x-3 px-4 py-3 rounded-lg transition-colors ${

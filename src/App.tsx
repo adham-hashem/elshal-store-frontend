@@ -32,6 +32,7 @@ import CustomersManagement from './pages/admin/CustomersManagement';
 import DiscountCodesManagement from './pages/admin/DiscountCodesManagement';
 import ShippingManagement from './pages/admin/ShippingManagement';
 import { Unsubscribe } from 'firebase/messaging';
+import OrderNotifications from './pages/admin/OrderNotifications';
 
 function AppContent() {
   // 🚨 THE PROBLEMATIC useEffect FOR FCM REGISTRATION HAS BEEN REMOVED. 🚨
@@ -88,7 +89,8 @@ function AppContent() {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<Navigate to="products" replace />} />
+              <Route index element={<Navigate to="notifications" replace />} />
+              <Route path="notifications" element={<OrderNotifications />} />
               <Route path="products" element={<ProductsManagement />} />
               <Route path="orders" element={<OrdersManagement />} />
               <Route path="customers" element={<CustomersManagement />} />
