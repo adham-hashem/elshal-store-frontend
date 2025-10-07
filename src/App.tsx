@@ -33,6 +33,7 @@ import DiscountCodesManagement from './pages/admin/DiscountCodesManagement';
 import ShippingManagement from './pages/admin/ShippingManagement';
 import { Unsubscribe } from 'firebase/messaging';
 import OrderNotifications from './pages/admin/OrderNotifications';
+import CompleteProfile from './pages/CompleteProfile';
 
 function AppContent() {
   // 🚨 THE PROBLEMATIC useEffect FOR FCM REGISTRATION HAS BEEN REMOVED. 🚨
@@ -77,6 +78,7 @@ function AppContent() {
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/product/:id" element={<ProductPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
             <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
             <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
             <Route path="/my-orders" element={<ProtectedRoute><MyOrders /></ProtectedRoute>} />

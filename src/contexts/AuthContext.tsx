@@ -10,6 +10,7 @@ interface User {
   password?: string;
   role: 'user' | 'admin';
   createdAt: string;
+  isProfileComplete?: boolean; // Added for profile completion
 }
 
 interface AuthContextType {
@@ -78,12 +79,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               : [decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] || 'Customer'];
             const isAdmin = roles.some((role: string) => role.toLowerCase() === 'admin');
 
+            // Check profile status
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile-status`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+            const { isProfileComplete } = await response.json();
+
             const userData: User = {
               id: decoded.sub || '',
               name: decoded.email?.split('@')[0] || 'المستخدم',
               email: decoded.email || '',
               role: isAdmin ? 'admin' : 'user',
               createdAt: new Date().toISOString(),
+              isProfileComplete: isProfileComplete || false,
             };
             setUser(userData);
           } else {
@@ -124,7 +132,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
 
       const data = await response.json();
-      console.log('Login response:', data);
       const { accessToken, refreshToken, roles } = data;
 
       if (!accessToken) {
@@ -139,6 +146,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error('فشل فك تشفير الرمز');
       }
 
+      // Check profile status
+      const profileResponse = await fetch(`${apiUrl}/api/users/profile-status`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
+      const { isProfileComplete } = await profileResponse.json();
+
       const isAdmin = Array.isArray(roles) && roles.some((r: string) => r.toLowerCase() === 'admin');
       const userData: User = {
         id: decoded.sub || '',
@@ -146,10 +159,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         email: decoded.email || email,
         role: isAdmin ? 'admin' : 'user',
         createdAt: new Date().toISOString(),
+        isProfileComplete: isProfileComplete || false,
       };
 
       setUser(userData);
-      const redirectTo = isAdmin ? '/admin/notifications' : '/';
+      const redirectTo = isProfileComplete ? (isAdmin ? '/admin/notifications' : '/') : '/complete-profile';
       return { redirectTo };
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -159,7 +173,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => {
+  const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => {
     setLoading(true);
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -185,7 +199,6 @@ const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => 
       }
 
       const data = await response.json();
-      console.log('Google login response:', data);
       const { accessToken, refreshToken, roles } = data;
 
       if (!accessToken) {
@@ -200,6 +213,12 @@ const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => 
         throw new Error('فشل فك تشفير الرمز');
       }
 
+      // Check profile status
+      const profileResponse = await fetch(`${apiUrl}/api/users/profile-status`, {
+        headers: { 'Authorization': `Bearer ${accessToken}` },
+      });
+      const { isProfileComplete } = await profileResponse.json();
+
       const isAdmin = Array.isArray(roles) && roles.some((r: string) => r.toLowerCase() === 'admin');
       const userData: User = {
         id: decoded.sub || '',
@@ -207,10 +226,11 @@ const googleLogin = async (idToken: string): Promise<{ redirectTo: string }> => 
         email: decoded.email || '',
         role: isAdmin ? 'admin' : 'user',
         createdAt: new Date().toISOString(),
+        isProfileComplete: isProfileComplete || false,
       };
 
       setUser(userData);
-      const redirectTo = isAdmin ? '/admin/notifications' : '/';
+      const redirectTo = isProfileComplete ? (isAdmin ? '/admin/notifications' : '/') : '/complete-profile';
       return { redirectTo };
     } catch (error: any) {
       console.error('Google login failed:', error);
