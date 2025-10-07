@@ -242,9 +242,18 @@ const OrderNotifications: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{notification.orderId}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.title}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{notification.body}</td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
+                        {notification.orderId}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
+                        {notification.title}
+                        {!notification.isRead && (
+                          <span className="inline-block w-2 h-2 mr-2 rounded-full bg-pink-600"></span>
+                        )}
+                      </td>
+                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
+                        {notification.body}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(notification.sentAt)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {notification.isRead ? 'مقروء' : 'غير مقروء'}
@@ -277,9 +286,18 @@ const OrderNotifications: React.FC = () => {
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">{notification.orderId}</p>
-                    <p className="text-xs text-gray-500">{notification.title}</p>
-                    <p className="text-xs text-gray-500">{notification.body}</p>
+                    <p className={`font-semibold text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
+                      {notification.orderId}
+                    </p>
+                    <p className={`text-xs ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
+                      {notification.title}
+                      {!notification.isRead && (
+                        <span className="inline-block w-2 h-2 mr-2 rounded-full bg-pink-600"></span>
+                      )}
+                    </p>
+                    <p className={`text-xs ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
+                      {notification.body}
+                    </p>
                   </div>
                   <button
                     onClick={() => handleViewNotification(notification)}
