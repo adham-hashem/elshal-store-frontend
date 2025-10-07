@@ -78,6 +78,19 @@ const OrdersManagement: React.FC = () => {
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
   const pageSize = 10;
 
+  const statusSequence = ['UnderReview', 'Confirmed', 'Shipped', 'Delivered'];
+
+  const getPreviousStatus = (currentStatus: string): string | null => {
+    if (currentStatus === 'Cancelled') {
+      return 'UnderReview';
+    }
+    const index = statusSequence.findIndex(s => s === currentStatus);
+    if (index > 0) {
+      return statusSequence[index - 1];
+    }
+    return null;
+  };
+
   // Check authentication and role on mount
   useEffect(() => {
     if (!isAuthenticated) {
@@ -646,7 +659,9 @@ const OrdersManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredOrders.map((order) => (
+                  {filteredOrders.map((order) => {
+                    const previous = getPreviousStatus(order.status);
+                    return (
                     <React.Fragment key={order.id}>
                       <tr className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -714,6 +729,28 @@ const OrdersManagement: React.FC = () => {
                                 تم الشحن
                               </button>
                             )}
+                            {order.status.toLowerCase() === 'shipped' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'Delivered')}
+                                className="bg-green-600 text-white px-2 py-1 rounded text-xs hover:bg-green-700 transition-colors flex items-center"
+                                title="تم التسليم"
+                                disabled={loading}
+                              >
+                                <Package className="h-3 w-3 mr-1" />
+                                تم التسليم
+                              </button>
+                            )}
+                            {previous && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, previous)}
+                                className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700 transition-colors flex items-center"
+                                title={`التراجع إلى ${getStatusText(previous)}`}
+                                disabled={loading}
+                              >
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                تراجع
+                              </button>
+                            )}
                             <button
                               onClick={() => deleteOrder(order.id)}
                               className="text-red-600 hover:text-red-900 p-1"
@@ -757,7 +794,7 @@ const OrdersManagement: React.FC = () => {
                         </tr>
                       )}
                     </React.Fragment>
-                  ))}
+                  )})}
                 </tbody>
               </table>
             </div>
@@ -765,7 +802,9 @@ const OrdersManagement: React.FC = () => {
 
           {/* Mobile Card View */}
           <div className="block sm:hidden space-y-4">
-            {filteredOrders.map((order) => (
+            {filteredOrders.map((order) => {
+              const previous = getPreviousStatus(order.status);
+              return (
               <div key={order.id} className="bg-white rounded-xl shadow-md border border-gray-200 p-4 transition-all duration-200 hover:shadow-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -905,6 +944,17 @@ const OrdersManagement: React.FC = () => {
                     </button>
                   )}
 
+                  {previous && (
+                    <button
+                      onClick={() => updateOrderStatus(order.id, previous)}
+                      className="flex items-center text-xs text-white bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700"
+                      disabled={loading}
+                    >
+                      <RefreshCw className="h-3 w-3 ml-1" />
+                      تراجع
+                    </button>
+                  )}
+
                   <button
                     onClick={() => deleteOrder(order.id)}
                     className="flex items-center text-xs text-red-600 bg-red-50 px-2 py-1 rounded hover:bg-red-100"
@@ -915,7 +965,7 @@ const OrdersManagement: React.FC = () => {
                   </button>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </>
       )}
@@ -1185,6 +1235,19 @@ const OrdersManagement: React.FC = () => {
                       >
                         <X className="h-4 w-4 ml-1" />
                         إلغاء الطلب
+                      </button>
+                    )}
+                    {getPreviousStatus(selectedOrder.status) && (
+                      <button
+                        onClick={() => {
+                          setShowOrderDetails(false);
+                          updateOrderStatus(selectedOrder.id, getPreviousStatus(selectedOrder.status)!);
+                        }}
+                        className="flex items-center bg-yellow-600 text-white px-3 py-2 rounded hover:bg-yellow-700 transition-colors text-sm"
+                        disabled={loading}
+                      >
+                        <RefreshCw className="h-4 w-4 ml-1" />
+                        التراجع إلى {getStatusText(getPreviousStatus(selectedOrder.status)!)}
                       </button>
                     )}
                     <button
