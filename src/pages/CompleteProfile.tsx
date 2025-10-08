@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { Loader } from 'lucide-react';
 
-const CompleteProfile: React.FC = () => {
+const CompleteProfile = () => {
   const { user, updateUserProfile } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -12,49 +13,57 @@ const CompleteProfile: React.FC = () => {
     phoneNumber: '',
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const checkProfileStatus = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/profile-status`, {
+        const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://elshal.runasp.net';
+        const response = await fetch(`${apiUrl}/api/users/profile-status`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
           },
         });
+        if (!response.ok) {
+          throw new Error('فشل في التحقق من حالة الملف الشخصي');
+        }
         const data = await response.json();
         if (data.isProfileComplete) {
           navigate('/');
         }
       } catch (err) {
         console.error('Error checking profile status:', err);
+        setError('حدث خطأ أثناء التحقق من حالة الملف الشخصي');
       }
     };
     checkProfileStatus();
   }, [navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/users/complete-profile`, {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://elshal.runasp.net';
+      const response = await fetch(`${apiUrl}/api/users/complete-profile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
         },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to complete profile');
+        throw new Error(errorData.message || 'فشل في إكمال الملف الشخصي');
       }
 
       updateUserProfile({
@@ -64,75 +73,118 @@ const CompleteProfile: React.FC = () => {
         phoneNumber: formData.phoneNumber,
       });
 
-      navigate('/');
-    } catch (err: any) {
-      setError(err.message || 'An error occurred while completing the profile');
+      setSuccess('تم إكمال الملف الشخصي بنجاح');
+      setTimeout(() => navigate('/'), 2000); // Redirect after showing success message
+    } catch (err) {
+      setError(err.message || 'حدث خطأ أثناء إكمال الملف الشخصي. حاول مرة أخرى لاحقاً.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-center">Complete Your Profile</h2>
-      {error && <p className="text-red-500 mb-4">{error}</p>}
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Full Name</label>
-          <input
-            type="text"
-            id="fullName"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-16" dir="rtl">
+      <div className="container mx-auto px-6">
+        <h1 className="text-4xl font-bold text-gray-900 text-center mb-12 tracking-tight">
+          إكمال الملف الشخصي
+        </h1>
+
+        <div className="max-w-md mx-auto bg-white rounded-3xl shadow-xl p-8 border border-pink-100">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 rounded-xl border border-red-100">
+              <p className="text-red-600 text-center font-medium">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 rounded-xl border border-green-100">
+              <p className="text-green-600 text-center font-medium">{success}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="fullName" className="block text-right text-gray-700 font-semibold mb-2">
+                الاسم الكامل
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                className="w-full p-3 rounded-full bg-gray-100 text-right border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all duration-300"
+                placeholder="أدخل الاسم الكامل"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="address" className="block text-right text-gray-700 font-semibold mb-2">
+                العنوان
+              </label>
+              <input
+                type="text"
+                id="address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                required
+                className="w-full p-3 rounded-full bg-gray-100 text-right border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all duration-300"
+                placeholder="أدخل العنوان"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="governorate" className="block text-right text-gray-700 font-semibold mb-2">
+                المحافظة
+              </label>
+              <input
+                type="text"
+                id="governorate"
+                name="governorate"
+                value={formData.governorate}
+                onChange={handleChange}
+                required
+                className="w-full p-3 rounded-full bg-gray-100 text-right border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all duration-300"
+                placeholder="أدخل المحافظة"
+                disabled={loading}
+              />
+            </div>
+            <div>
+              <label htmlFor="phoneNumber" className="block text-right text-gray-700 font-semibold mb-2">
+                رقم الهاتف
+              </label>
+              <input
+                type="tel"
+                id="phoneNumber"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                required
+                className="w-full p-3 rounded-full bg-gray-100 text-right border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all duration-300"
+                placeholder="أدخل رقم الهاتف"
+                disabled={loading}
+              />
+            </div>
+            <div className="text-center">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-pink-600 text-white py-3 px-8 rounded-full hover:bg-pink-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <Loader className="animate-spin mr-2" size={20} />
+                    جارٍ الإرسال...
+                  </span>
+                ) : (
+                  'إكمال الملف الشخصي'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-        <div>
-          <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
-          <input
-            type="text"
-            id="address"
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div>
-          <label htmlFor="governorate" className="block text-sm font-medium text-gray-700">Governorate</label>
-          <input
-            type="text"
-            id="governorate"
-            name="governorate"
-            value={formData.governorate}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <div>
-          <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Phone Number</label>
-          <input
-            type="tel"
-            id="phoneNumber"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 disabled:opacity-50"
-        >
-          {loading ? 'Submitting...' : 'Complete Profile'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };
