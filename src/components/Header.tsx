@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, ShoppingCart, User, Menu, X, LogOut } from 'lucide-react';
+import { Search, ShoppingCart, User, Menu, X, LogOut, UserCircle, Settings } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { useAuth } from '../contexts/AuthContext';
+
+const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://elshal.runasp.net';
 
 const Header: React.FC = () => {
   const { state } = useApp();
@@ -14,6 +16,20 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSearch = async () => {
     if (!searchCode.trim()) {
@@ -26,28 +42,20 @@ const Header: React.FC = () => {
       setIsLoading(true);
       setSearchError(null);
 
-      const apiUrl = import.meta.env.VITE_API_BASE_URL;
-      console.log('VITE_API_BASE_URL:', import.meta.env.VITE_API_BASE_URL); // Debug log
-      console.log('API URL:', `${apiUrl}/api/products/code/${searchCode.trim()}`); // Debug log
-
+      const token = localStorage.getItem('accessToken');
       const response = await fetch(`${apiUrl}/api/products/code/${searchCode.trim()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json', // Ensure JSON response
-          // Add Authorization header if required
-          ...(isAuthenticated && user?.token ? { Authorization: `Bearer ${user.token}` } : {}),
+          'Accept': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-
-      console.log('Response status:', response.status); // Debug log
-      console.log('Response headers:', [...response.headers.entries()]); // Debug log
 
       if (response.ok) {
         const contentType = response.headers.get('content-type');
         if (contentType && contentType.includes('application/json')) {
           const product = await response.json();
-          // Validate response structure
           if (product.id && product.name && product.code && product.price && product.images?.[0]?.imagePath) {
             setSearchResult(product);
           } else {
@@ -60,11 +68,9 @@ const Header: React.FC = () => {
         const contentType = response.headers.get('content-type');
         let errorMessage = `خطأ في الخادم: ${response.status} ${response.statusText}`;
         if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
+          const errorData = await response.json().catch(() => ({}));
           errorMessage = errorData.message || errorMessage;
         } else {
-          const errorText = await response.text();
-          console.log('Error response body:', errorText); // Debug log
           if (response.status === 404) {
             errorMessage = 'لم يتم العثور على منتج بهذا الكود';
           }
@@ -88,14 +94,13 @@ const Header: React.FC = () => {
   const menuItems = [
     { path: '/women', label: 'قسم الحريمي' },
     { path: '/children', label: 'قسم الأطفال' },
-    // { path: '/offers', label: 'العروض' },
     { path: '/my-orders', label: 'طلباتي' },
   ];
 
   const handleLogout = () => {
     logout();
+    setIsProfileDropdownOpen(false);
     navigate('/');
-    // alert('تم تسجيل الخروج بنجاح');
   };
 
   return (
@@ -126,6 +131,7 @@ const Header: React.FC = () => {
                 onClick={handleSearch}
                 className="text-gray-500 hover:text-pink-600 transition-colors"
                 disabled={isLoading}
+                aria-label="بحث"
               >
                 <Search size={20} />
               </button>
@@ -135,45 +141,77 @@ const Header: React.FC = () => {
           <div className="flex items-center space-x-reverse space-x-4">
             <div className="hidden md:flex items-center space-x-reverse space-x-4">
               {isAuthenticated ? (
-                <>
-                  <span className="text-sm text-gray-600">مرحباً، {user?.name}</span>
-                  {userRole === 'admin' && (
-                    <Link
-                      to="/admin"
-                      className="text-blue-600 hover:text-blue-700 font-medium transition-colors text-sm"
-                    >
-                      لوحة التحكم
-                    </Link>
-                  )}
+                <div className="relative" ref={dropdownRef}>
                   <button
-                    onClick={handleLogout}
-                    className="text-red-600 hover:text-red-700 font-medium transition-colors flex items-center space-x-reverse space-x-1 text-sm"
+                    onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                    className="flex items-center space-x-reverse space-x-2 text-gray-700 hover:text-pink-600 transition-colors p-2 rounded-lg hover:bg-gray-50"
                   >
-                    <LogOut size={16} />
-                    <span>خروج</span>
+                    <UserCircle size={24} />
+                    <span className="text-sm font-medium">{user?.name}</span>
                   </button>
-                </>
+
+                  {isProfileDropdownOpen && (
+                    <div className="absolute left-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50">
+                      <div className="px-4 py-3 border-b border-gray-100">
+                        <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                      </div>
+                      
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center space-x-reverse space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Settings size={18} />
+                        <span className="text-sm">الملف الشخصي</span>
+                      </Link>
+
+                      <Link
+                        to="/my-orders"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="flex items-center space-x-reverse space-x-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <ShoppingCart size={18} />
+                        <span className="text-sm">طلباتي</span>
+                      </Link>
+
+                      {userRole === 'admin' && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center space-x-reverse space-x-3 px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors"
+                        >
+                          <Settings size={18} />
+                          <span className="text-sm font-medium">لوحة التحكم</span>
+                        </Link>
+                      )}
+
+                      <div className="border-t border-gray-100 mt-2">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center space-x-reverse space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors w-full"
+                        >
+                          <LogOut size={18} />
+                          <span className="text-sm font-medium">تسجيل الخروج</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <>
-                  <Link
-                    to="/login"
-                    className="text-gray-700 hover:text-pink-600 font-medium transition-colors"
-                  >
-                    تسجيل دخول
-                  </Link>
-                  {/* <Link
-                    to="/register"
-                    className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors font-medium"
-                  >
-                    إنشاء حساب
-                  </Link> */}
-                </>
+                <Link
+                  to="/login"
+                  className="text-gray-700 hover:text-pink-600 font-medium transition-colors"
+                >
+                  تسجيل دخول
+                </Link>
               )}
             </div>
 
             <button
               onClick={() => navigate('/cart')}
               className="relative p-2 text-gray-700 hover:text-pink-600 transition-colors"
+              aria-label="عربة التسوق"
             >
               <ShoppingCart size={24} />
               {cartItemsCount > 0 && (
@@ -186,6 +224,7 @@ const Header: React.FC = () => {
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="md:hidden p-2 text-gray-700 hover:text-pink-600"
+              aria-label="القائمة"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -216,7 +255,7 @@ const Header: React.FC = () => {
           <div className="mb-4 p-4 bg-pink-50 rounded-lg border border-pink-100">
             <div className="flex items-center space-x-reverse space-x-4">
               <img
-                src={`${import.meta.env.VITE_API_BASE_URL || 'https://elshal.runasp.net'}/${searchResult.images[0].imagePath}`}
+                src={`${apiUrl}${searchResult.images[0].imagePath}`}
                 alt={searchResult.name}
                 className="w-16 h-16 object-cover rounded-lg"
               />
@@ -263,6 +302,7 @@ const Header: React.FC = () => {
                   onClick={handleSearch}
                   className="text-gray-500 hover:text-pink-600"
                   disabled={isLoading}
+                  aria-label="بحث"
                 >
                   <Search size={20} />
                 </button>
@@ -288,30 +328,44 @@ const Header: React.FC = () => {
 
             {isAuthenticated ? (
               <div className="border-t pt-4 space-y-3">
-                <p className="text-sm text-gray-600 text-right px-4">
-                  مرحباً، {user?.name}
-                </p>
+                <div className="px-4 py-2 bg-gray-50 rounded-lg">
+                  <p className="text-sm font-semibold text-gray-800">{user?.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                </div>
+                
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center space-x-reverse space-x-3 py-3 px-4 text-gray-700 hover:text-pink-600 font-medium transition-colors rounded-lg hover:bg-gray-50"
+                >
+                  <Settings size={18} />
+                  <span>الملف الشخصي</span>
+                </Link>
+
                 {userRole === 'admin' && (
                   <Link
                     to="/admin"
                     onClick={() => setIsMenuOpen(false)}
-                    className="block text-right py-3 px-4 text-blue-600 hover:text-blue-700 font-medium transition-colors rounded-lg hover:bg-blue-50"
+                    className="flex items-center space-x-reverse space-x-3 py-3 px-4 text-blue-600 hover:text-blue-700 font-medium transition-colors rounded-lg hover:bg-blue-50"
                   >
-                    لوحة التحكم
+                    <Settings size={18} />
+                    <span>لوحة التحكم</span>
                   </Link>
                 )}
+                
                 <button
                   onClick={() => {
                     handleLogout();
                     setIsMenuOpen(false);
                   }}
-                  className="block w-full text-right py-3 px-4 text-red-600 hover:text-red-700 font-medium transition-colors rounded-lg hover:bg-red-50"
+                  className="flex items-center space-x-reverse space-x-3 w-full text-right py-3 px-4 text-red-600 hover:text-red-700 font-medium transition-colors rounded-lg hover:bg-red-50"
                 >
-                  تسجيل خروج
+                  <LogOut size={18} />
+                  <span>تسجيل الخروج</span>
                 </button>
               </div>
             ) : (
-              <div className="border-t pt-4 space-y-3">
+              <div className="border-t pt-4">
                 <Link
                   to="/login"
                   onClick={() => setIsMenuOpen(false)}
@@ -319,13 +373,6 @@ const Header: React.FC = () => {
                 >
                   تسجيل دخول
                 </Link>
-                {/* <Link
-                  to="/register"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block text-center py-3 px-4 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors font-medium"
-                >
-                  إنشاء حساب
-                </Link> */}
               </div>
             )}
           </div>
