@@ -809,7 +809,7 @@ const ProductsManagement: React.FC = () => {
                                 />
                               </div>
                               <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">السعر الأصلي (اختياري)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">السعر الأصلي</label>
                                 <input
                                   type="number"
                                   value={newProduct.originalPrice}
