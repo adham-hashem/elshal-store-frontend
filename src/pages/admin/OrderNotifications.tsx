@@ -36,7 +36,7 @@ const OrderNotifications: React.FC = () => {
 
   // Utility function to format notification body with Egyptian Pound
   const formatNotificationBody = (body: string) => {
-    return body.replace(/\$/g, 'جنية مصري');
+    return body.replace(/\$/g, ' جنية مصري');
   };
 
   useEffect(() => {
