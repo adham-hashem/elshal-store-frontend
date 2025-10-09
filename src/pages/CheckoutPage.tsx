@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, CreditCard, Truck, Loader2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { CartItem } from '../types';
-// import { requestNotificationPermission } from '../services/firebase'; // Import Firebase service
 
 interface ShippingFee {
   id: string;
@@ -83,6 +82,36 @@ const CheckoutPage: React.FC = () => {
   const [notificationError, setNotificationError] = useState<string | null>(null);
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+  const governorateMap = {
+    "7": "الدقهلية",
+    "1": "القاهرة",
+    "2": "الأسكندرية",
+    "3": "بورسعيد",
+    "4": "السويس",
+    "5": "الإسماعيلية",
+    "6": "دمياط",
+    "8": "الشرقية",
+    "9": "القليوبية",
+    "10": "كفر الشيخ",
+    "11": "الغربية",
+    "12": "المنوفية",
+    "13": "البحيرة",
+    "14": "الجيزة",
+    "15": "بنى سويف",
+    "16": "الفيوم",
+    "17": "المنيا",
+    "18": "أسيوط",
+    "19": "سوهاج",
+    "20": "قنا",
+    "21": "أسوان",
+    "22": "مطروح",
+    "23": "الوادى الجديد",
+    "24": "البحر الاحمر",
+    "25": "شمال سيناء",
+    "26": "جنوب سيناء",
+    "27": "الأقصر"
+  };
 
   const fetchCart = useCallback(async (retryCount = 3, retryDelay = 1000) => {
     const token = localStorage.getItem('accessToken');
@@ -173,7 +202,7 @@ const CheckoutPage: React.FC = () => {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const response = await fetch(`${apiUrl}/api/shipping-fees?pageNumber=1&pageSize=10`, {
+      const response = await fetch(`${apiUrl}/api/shipping-fees?pageNumber=1&pageSize=30`, {
         method: 'GET',
         headers,
       });
@@ -194,7 +223,7 @@ const CheckoutPage: React.FC = () => {
 
   const { subtotal, selectedGovernorate, shippingFee, discountAmount, total } = useMemo(() => {
     const subtotalCalc = state.cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-    const selectedGov = shippingFees.find(g => g.governorate === formData.governorate);
+    const selectedGov = shippingFees.find(g => g.governorate === governorateMap[formData.governorate]);
     const shipFee = selectedGov?.fee || 0;
     const discountAmt = discount?.amount || 0;
     const totalCalc = Math.max(0, subtotalCalc - discountAmt + shipFee);
@@ -273,7 +302,7 @@ const CheckoutPage: React.FC = () => {
     }
 
     if (!formData.address.trim()) newErrors.address = 'العنوان مطلوب';
-    if (!formData.governorate) newErrors.governorate = 'المحافظة مطلوبة';
+    if (!formData.governorate || formData.governorate === '0') newErrors.governorate = 'المحافظة مطلوبة';
 
     if (formData.paymentMethod === 'visa') {
       if (!formData.cardNumber.trim()) newErrors.cardNumber = 'رقم البطاقة مطلوب';
@@ -349,7 +378,7 @@ const CheckoutPage: React.FC = () => {
           fullname: formData.fullName.trim(),
           phonenumber: formData.phone.trim(),
           address: formData.address.trim(),
-          governorate: formData.governorate,
+          governorate: governorateMap[formData.governorate] || formData.governorate,
           discountCode: discount?.code || null,
           paymentMethod: formData.paymentMethod === 'cash' ? 0 : 1,
           items: state.cart.map(item => ({
@@ -381,7 +410,6 @@ const CheckoutPage: React.FC = () => {
         const orderResult = await response.json();
         console.log('Order API response:', orderResult);
 
-        // Map API response to local order format
         const mapStatus = (status: number): 'Pending' | 'Confirmed' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' => {
           switch (status) {
             case 0: return 'Pending';
@@ -427,14 +455,13 @@ const CheckoutPage: React.FC = () => {
             fullName: formData.fullName.trim(),
             phone: formData.phone.trim(),
             address: formData.address.trim(),
-            governorate: formData.governorate,
+            governorate: governorateMap[formData.governorate] || formData.governorate,
           },
         };
 
         console.log('Local order created:', localOrder);
         dispatch({ type: 'ADD_ORDER', payload: localOrder });
 
-        // Notify backend to send push notification to admin
         try {
           await sendAdminNotification(localOrder.id, total);
           console.log('Admin notification request sent');
@@ -655,29 +682,44 @@ const CheckoutPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       المحافظة *
                     </label>
-                    {loadingShippingFees ? (
-                      <div className="flex items-center space-x-reverse space-x-2">
-                        <Loader2 className="animate-spin text-pink-600" size={18} />
-                        <span className="text-gray-600 text-sm">جاري تحميل المحافظات...</span>
-                      </div>
-                    ) : (
-                      <select
-                        value={formData.governorate}
-                        onChange={(e) => handleInputChange('governorate', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right text-base ${
-                          errors.governorate ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        dir="rtl"
-                        disabled={shippingFees.length === 0 || isSubmitting}
-                      >
-                        <option value="">اختر المحافظة</option>
-                        {shippingFees.map((gov) => (
-                          <option key={gov.id} value={gov.governorate}>
-                            {gov.governorate} - {gov.fee} جنيه ({gov.deliveryTime})
-                          </option>
-                        ))}
-                      </select>
-                    )}
+                    <select
+                      value={formData.governorate}
+                      onChange={(e) => handleInputChange('governorate', e.target.value)}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right text-base ${
+                        errors.governorate ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                      dir="rtl"
+                      disabled={isSubmitting}
+                    >
+                      <option value="0">اختر...</option>
+                      <option value="7">الدقهلية</option>
+                      <option value="1">القاهرة</option>
+                      <option value="2">الأسكندرية</option>
+                      <option value="3">بورسعيد</option>
+                      <option value="4">السويس</option>
+                      <option value="5">الإسماعيلية</option>
+                      <option value="6">دمياط</option>
+                      <option value="8">الشرقية</option>
+                      <option value="9">القليوبية</option>
+                      <option value="10">كفر الشيخ</option>
+                      <option value="11">الغربية</option>
+                      <option value="12">المنوفية</option>
+                      <option value="13">البحيرة</option>
+                      <option value="14">الجيزة</option>
+                      <option value="15">بنى سويف</option>
+                      <option value="16">الفيوم</option>
+                      <option value="17">المنيا</option>
+                      <option value="18">أسيوط</option>
+                      <option value="19">سوهاج</option>
+                      <option value="20">قنا</option>
+                      <option value="21">أسوان</option>
+                      <option value="22">مطروح</option>
+                      <option value="23">الوادى الجديد</option>
+                      <option value="24">البحر الاحمر</option>
+                      <option value="25">شمال سيناء</option>
+                      <option value="26">جنوب سيناء</option>
+                      <option value="27">الأقصر</option>
+                    </select>
                     {errors.governorate && <p className="text-red-500 text-sm mt-1">{errors.governorate}</p>}
                   </div>
 
@@ -745,9 +787,9 @@ const CheckoutPage: React.FC = () => {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting || loadingShippingFees}
+                  disabled={isSubmitting}
                   className={`w-full py-3 rounded-lg font-medium text-base transition-colors ${
-                    isSubmitting || loadingShippingFees
+                    isSubmitting
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                       : 'bg-pink-600 text-white hover:bg-pink-700'
                   }`}

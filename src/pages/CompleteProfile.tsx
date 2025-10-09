@@ -50,6 +50,12 @@ const CompleteProfile = () => {
     setError('');
     setSuccess('');
 
+    if (formData.governorate === "0") {
+      setError('يرجى اختيار محافظة صالحة');
+      setLoading(false);
+      return;
+    }
+
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'https://elshal.runasp.net';
       const response = await fetch(`${apiUrl}/api/users/complete-profile`, {
@@ -138,17 +144,44 @@ const CompleteProfile = () => {
               <label htmlFor="governorate" className="block text-right text-gray-700 font-semibold mb-2">
                 المحافظة
               </label>
-              <input
-                type="text"
+              <select
                 id="governorate"
                 name="governorate"
                 value={formData.governorate}
                 onChange={handleChange}
                 required
                 className="w-full p-3 rounded-full bg-gray-100 text-right border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-300 transition-all duration-300"
-                placeholder="أدخل المحافظة"
                 disabled={loading}
-              />
+              >
+                <option value="0">اختر...</option>
+                <option value="7">الدقهلية</option>
+                <option value="1">القاهرة</option>
+                <option value="2">الأسكندرية</option>
+                <option value="3">بورسعيد</option>
+                <option value="4">السويس</option>
+                <option value="5">الإسماعيلية</option>
+                <option value="6">دمياط</option>
+                <option value="8">الشرقية</option>
+                <option value="9">القليوبية</option>
+                <option value="10">كفر الشيخ</option>
+                <option value="11">الغربية</option>
+                <option value="12">المنوفية</option>
+                <option value="13">البحيرة</option>
+                <option value="14">الجيزة</option>
+                <option value="15">بنى سويف</option>
+                <option value="16">الفيوم</option>
+                <option value="17">المنيا</option>
+                <option value="18">أسيوط</option>
+                <option value="19">سوهاج</option>
+                <option value="20">قنا</option>
+                <option value="21">أسوان</option>
+                <option value="22">مطروح</option>
+                <option value="23">الوادى الجديد</option>
+                <option value="24">البحر الاحمر</option>
+                <option value="25">شمال سيناء</option>
+                <option value="26">جنوب سيناء</option>
+                <option value="27">الأقصر</option>
+              </select>
             </div>
             <div>
               <label htmlFor="phoneNumber" className="block text-right text-gray-700 font-semibold mb-2">
