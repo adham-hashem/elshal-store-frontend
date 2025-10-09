@@ -1155,9 +1155,20 @@ const OrdersManagement: React.FC = () => {
                         className="flex flex-col sm:flex-row sm:justify-between sm:items-center p-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex-1">
-                          <div className="flex items-center">
-                            <Package className="h-5 w-5 text-pink-600 ml-2" />
-                            <p className="font-semibold text-gray-900">{item.productName}</p>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <Package className="h-5 w-5 text-pink-600 ml-2" />
+                              <p className="font-semibold text-gray-900">{item.productName}</p>
+                            </div>
+                            <a
+                              href={`https://www.elshal.store/product/${item.productId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-pink-600 hover:text-pink-800 underline flex items-center"
+                            >
+                              <Eye className="h-4 w-4 ml-1" />
+                              عرض المنتج
+                            </a>
                           </div>
                           <div className="text-sm text-gray-600 mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <p><span className="font-medium">كود المنتج:</span> {item.productCode}</p>
