@@ -35,9 +35,9 @@ const OrderNotifications: React.FC = () => {
   const pageSize = 10;
 
   // Utility function to format notification body with Egyptian Pound
-  const formatNotificationBody = (body: string) => {
-    return body.replace(/\$/g, 'جنية مصري ');
-  };
+  // const formatNotificationBody = (body: string) => {
+  //   return body.replace(/\$/g, 'جنية مصري ');
+  // };
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -187,7 +187,7 @@ const OrderNotifications: React.FC = () => {
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">الرسالة:</span>
-              <span className="text-gray-900">{formatNotificationBody(selectedNotification.body)}</span>
+              <span className="text-gray-900">{selectedNotification.body}</span>
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">تاريخ الإنشاء:</span>
@@ -257,7 +257,7 @@ const OrderNotifications: React.FC = () => {
                         )}
                       </td>
                       <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
-                        {formatNotificationBody(notification.body)}
+                        {notification.body}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(notification.sentAt)}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -301,7 +301,7 @@ const OrderNotifications: React.FC = () => {
                       )}
                     </p>
                     <p className={`text-xs ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
-                      {formatNotificationBody(notification.body)}
+                      {notification.body}
                     </p>
                   </div>
                   <button
