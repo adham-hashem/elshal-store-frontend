@@ -177,10 +177,10 @@ const OrderNotifications: React.FC = () => {
         <div className="mb-6 p-4 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200">
           <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">تفاصيل الإشعار</h3>
           <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row sm:justify-between">
+            {/* <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">رقم الطلب:</span>
               <span className="text-gray-900">{selectedNotification.orderId}</span>
-            </div>
+            </div> */}
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">العنوان:</span>
               <span className="text-gray-900">{selectedNotification.title}</span>
@@ -197,10 +197,10 @@ const OrderNotifications: React.FC = () => {
               <span className="text-gray-500 font-medium">الحالة:</span>
               <span className="text-gray-900">{selectedNotification.isRead ? 'مقروء' : 'غير مقروء'}</span>
             </div>
-            <div className="flex flex-col sm:flex-row sm:justify-between">
+            {/* <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">نجاح الإرسال:</span>
               <span className="text-gray-900">{selectedNotification.success ? 'نعم' : 'لا'}</span>
-            </div>
+            </div> */}
             {selectedNotification.errorMessage && (
               <div className="flex flex-col sm:flex-row sm:justify-between">
                 <span className="text-gray-500 font-medium">رسالة الخطأ:</span>
@@ -247,9 +247,9 @@ const OrderNotifications: React.FC = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50 transition-colors">
-                      <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
+                      {/* <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
                         {notification.orderId}
-                      </td>
+                      </td> */}
                       <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
                         {notification.title}
                         {!notification.isRead && (
@@ -263,9 +263,9 @@ const OrderNotifications: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {notification.isRead ? 'مقروء' : 'غير مقروء'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {notification.success ? 'نعم' : 'لا'}
-                      </td>
+                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleViewNotification(notification)}
@@ -291,9 +291,9 @@ const OrderNotifications: React.FC = () => {
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <p className={`font-semibold text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
+                    {/* <p className={`font-semibold text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
                       {notification.orderId}
-                    </p>
+                    </p> */}
                     <p className={`text-xs ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
                       {notification.title}
                       {!notification.isRead && (
@@ -321,10 +321,10 @@ const OrderNotifications: React.FC = () => {
                     <span className="text-xs text-gray-500">الحالة:</span>
                     <span className="text-xs text-gray-900">{notification.isRead ? 'مقروء' : 'غير مقروء'}</span>
                   </div>
-                  <div className="flex justify-between">
+                  {/* <div className="flex justify-between">
                     <span className="text-xs text-gray-500">نجاح الإرسال:</span>
                     <span className="text-xs text-gray-900">{notification.success ? 'نعم' : 'لا'}</span>
-                  </div>
+                  </div> */}
                 </div>
               </div>
             ))}
