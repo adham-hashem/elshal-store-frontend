@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { Eye, X } from 'lucide-react';
+import { Eye, X, ChevronRight, ChevronLeft } from 'lucide-react';
 
-// Customer interface matching the API response
+// Updated Customer interface to match API response
 interface Customer {
   id: string;
   fullName: string;
   email: string;
-  phone?: string;
-  totalOrders: number;
+  phoneNumber?: string;
   address?: string;
   governorate?: string;
   isEmailVerified: boolean;
+  orderCount: number;
+  isProfileComplete: boolean;
 }
 
 interface PaginatedCustomersResponse {
@@ -31,6 +32,7 @@ const CustomersManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
 
   useEffect(() => {
@@ -71,13 +73,8 @@ const CustomersManagement: React.FC = () => {
           throw new Error('Invalid response format: Expected an array of customers.');
         }
 
-        const mappedCustomers = data.items.map((customer: any) => ({
-          ...customer,
-          phone: customer.phone || 'غير متوفر',
-          totalOrders: customer.orderCount || 0,
-        }));
-
-        setCustomers(mappedCustomers);
+        setCustomers(data.items);
+        setTotalPages(data.totalPages);
       } catch (err: any) {
         console.error('Error fetching customers:', err);
         setError(err.message || 'An error occurred while fetching customers.');
@@ -102,6 +99,13 @@ const CustomersManagement: React.FC = () => {
 
   const handleCloseDetails = () => {
     setSelectedCustomer(null);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setPageNumber(newPage);
+      setLoading(true);
+    }
   };
 
   if (loading) {
@@ -139,11 +143,11 @@ const CustomersManagement: React.FC = () => {
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">رقم الهاتف:</span>
-              <span className="text-gray-900">{selectedCustomer.phone}</span>
+              <span className="text-gray-900">{selectedCustomer.phoneNumber || 'غير متوفر'}</span>
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">إجمالي الطلبات:</span>
-              <span className="text-gray-900">{selectedCustomer.totalOrders}</span>
+              <span className="text-gray-900">{selectedCustomer.orderCount}</span>
             </div>
             {selectedCustomer.address && (
               <div className="flex flex-col sm:flex-row sm:justify-between">
@@ -160,6 +164,10 @@ const CustomersManagement: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:justify-between">
               <span className="text-gray-500 font-medium">البريد مؤكد:</span>
               <span className="text-gray-900">{selectedCustomer.isEmailVerified ? 'نعم' : 'لا'}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between">
+              <span className="text-gray-500 font-medium">الملف مكتمل:</span>
+              <span className="text-gray-900">{selectedCustomer.isProfileComplete ? 'نعم' : 'لا'}</span>
             </div>
           </div>
           <button
@@ -190,8 +198,8 @@ const CustomersManagement: React.FC = () => {
                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{customer.fullName}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.phone}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.totalOrders}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.phoneNumber || 'غير متوفر'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{customer.orderCount}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleViewCustomer(customer)}
@@ -231,15 +239,42 @@ const CustomersManagement: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500">رقم الهاتف:</span>
-                    <span className="text-xs text-gray-900">{customer.phone}</span>
+                    <span className="text-xs text-gray-900">{customer.phoneNumber || 'غير متوفر'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-xs text-gray-500">إجمالي الطلبات:</span>
-                    <span className="text-xs text-gray-900">{customer.totalOrders}</span>
+                    <span className="text-xs text-gray-900">{customer.orderCount}</span>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="mt-6 flex justify-center items-center space-x-4 space-x-reverse">
+            <button
+              onClick={() => handlePageChange(pageNumber - 1)}
+              disabled={pageNumber === 1}
+              className={`px-4 py-2 rounded-lg flex items-center ${
+                pageNumber === 1 ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-pink-600 text-white hover:bg-pink-700'
+              }`}
+            >
+              <ChevronRight className="h-4 w-4 ml-2" />
+              السابق
+            </button>
+            <span className="text-gray-600">
+              الصفحة {pageNumber} من {totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(pageNumber + 1)}
+              disabled={pageNumber === totalPages}
+              className={`px-4 py-2 rounded-lg flex items-center ${
+                pageNumber === totalPages ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-pink-600 text-white hover:bg-pink-700'
+              }`}
+            >
+              التالي
+              <ChevronLeft className="h-4 w-4 mr-2" />
+            </button>
           </div>
         </>
       ) : (
