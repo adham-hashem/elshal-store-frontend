@@ -19,14 +19,14 @@ const Footer: React.FC = () => {
                 <MapPin className="text-pink-400 mt-1 flex-shrink-0" size={20} />
                 <div>
                   <p className="font-semibold">فرع 1</p>
-                  <p className="text-gray-300">محافظة الدقهلية – ميت سلسيل – الطريق العام</p>
+                  <p className="text-gray-300">محافظة الدقهلية – مدينة ميت سلسيل الطريق العام كوبري الجوابر مقابل حلواني إسراء</p>
                 </div>
               </div>
               <div className="flex items-start space-x-reverse space-x-3">
                 <MapPin className="text-pink-400 mt-1 flex-shrink-0" size={20} />
                 <div>
                   <p className="font-semibold">فرع 2</p>
-                  <p className="text-gray-300">الجمالية – محافظة الدقهلية</p>
+                  <p className="text-gray-300">محافظة الدقهلية - مدينة الجمالية شارع البوسطه مقابل الداده دودي</p>
                 </div>
               </div>
             </div>
@@ -45,6 +45,9 @@ const Footer: React.FC = () => {
               </button>
               <p className="text-gray-300 text-sm">
                 إدارة أستاذ محمد الشال – التوصيل لجميع محافظات الجمهورية
+              </p>
+              <p className="text-gray-300 text-sm">
+                متاح الشحن لجميع المحافظات
               </p>
             </div>
           </div>
