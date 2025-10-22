@@ -67,7 +67,7 @@ const Footer: React.FC = () => {
                   <MessageCircle size={18} />
                 </button>
               </div>
-              {/* <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
                 <span className="text-sm">م/  إسراء عديسة</span>
                 <button
                   onClick={() => openWhatsApp('201027548602', 'مرحباً، أريد الاستفسار عن الموقع')}
@@ -75,7 +75,7 @@ const Footer: React.FC = () => {
                 >
                   <MessageCircle size={18} />
                 </button>
-              </div> */}
+              </div>
             </div>
           </div>
         </div>
