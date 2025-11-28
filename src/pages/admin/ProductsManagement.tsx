@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Upload, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Menu, X, ChevronLeft, ChevronRight, EyeOff, Eye, Package, Zap } from 'lucide-react';
+
+// Assuming you have a file at this path
 import { useAuth } from '../../contexts/AuthContext';
 
 interface ProductImage {
@@ -9,6 +11,7 @@ interface ProductImage {
   isMain: boolean;
 }
 
+// 1. UPDATED: Add new properties: isHidden, isAvailable, season
 interface Product {
   id: string;
   code: string;
@@ -21,8 +24,14 @@ interface Product {
   sizes: string[];
   colors: string[];
   images: ProductImage[];
-  inStock?: boolean;
-  isOffer?: boolean;
+  inStock?: boolean; // Existing, often derived/deprecated client-side
+  isOffer?: boolean; // Existing, used for display/featured
+  
+  // NEW PROPERTIES from API response
+  isHidden: boolean;
+  isAvailable: boolean;
+  season: number; // 0 for Winter (default), 1 for Summer
+  
   rowVersion: string;
 }
 
@@ -44,6 +53,8 @@ const ProductsManagement: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showEditProduct, setShowEditProduct] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+  
+  // 2. UPDATED: Add new properties to newProduct state initialization
   const [newProduct, setNewProduct] = useState({
     code: '',
     name: '',
@@ -55,7 +66,11 @@ const ProductsManagement: React.FC = () => {
     category: 0,
     isOffer: false,
     images: [''],
+    isHidden: false, // NEW
+    isAvailable: false, // NEW (API returns false by default, maybe rename 'inStock' on client?)
+    season: 0, // NEW (0 for Winter, 1 for Summer)
   });
+  
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,6 +79,7 @@ const ProductsManagement: React.FC = () => {
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
+  // ... (Authentication and initial load effects remain unchanged)
   useEffect(() => {
     const getAuthToken = () => {
       const authToken = localStorage.getItem('accessToken');
@@ -134,12 +150,19 @@ const ProductsManagement: React.FC = () => {
         if (data && Array.isArray(data.items)) {
           const mappedProducts: Product[] = data.items.map(item => ({
             ...item,
-            inStock: true,
-            isOffer: false,
+            // Existing mappings
+            inStock: item.isAvailable, // Map inStock to isAvailable if needed
+            isOffer: item.isOffer || false, 
+            
+            // New property mappings
+            isHidden: item.isHidden ?? false, // Ensure boolean default
+            isAvailable: item.isAvailable ?? false,
+            season: item.season ?? 0,
+            
             rowVersion: item.rowVersion,
             images: item.images.map(img => ({
               id: img.id,
-              imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images')
+              imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images') || img.imagePath.startsWith('/uploads')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
               isMain: img.isMain,
@@ -172,6 +195,7 @@ const ProductsManagement: React.FC = () => {
     );
   };
 
+  // 3. UPDATED: Include new properties in FormData
   const handleAddProduct = async () => {
     if (isLoading) return;
 
@@ -194,6 +218,12 @@ const ProductsManagement: React.FC = () => {
       formData.append('code', newProduct.code);
       formData.append('price', newProduct.price);
       formData.append('description', newProduct.description || '');
+      
+      // New properties
+      formData.append('isHidden', newProduct.isHidden.toString()); // NEW
+      formData.append('isAvailable', newProduct.isAvailable.toString()); // NEW
+      formData.append('season', newProduct.season.toString()); // NEW
+      
       newProduct.sizes
         .filter(size => size.trim() !== '')
         .forEach(size => formData.append('sizes[]', size));
@@ -267,11 +297,14 @@ const ProductsManagement: React.FC = () => {
       if (result) {
         const newProductWithImages = {
           ...result,
-          inStock: true,
-          isOffer: false,
+          inStock: result.isAvailable || false, // NEW
+          isOffer: result.isFeatured || false,
+          isHidden: result.isHidden || false, // NEW
+          isAvailable: result.isAvailable || false, // NEW
+          season: result.season ?? 0, // NEW
           images: result.images.map((img: ProductImage) => ({
             ...img,
-            imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images')
+            imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images') || img.imagePath.startsWith('/uploads')
               ? `${apiUrl}${img.imagePath}`
               : img.imagePath,
           })),
@@ -293,6 +326,7 @@ const ProductsManagement: React.FC = () => {
     }
   };
 
+  // 4. UPDATED: Include new properties in FormData
   const handleUpdateProduct = async () => {
     if (isLoading || !editingProduct) return;
 
@@ -320,6 +354,11 @@ const ProductsManagement: React.FC = () => {
       formData.append('category', newProduct.category.toString());
       formData.append('isFeatured', newProduct.isOffer.toString());
       
+      // New Properties
+      formData.append('isHidden', newProduct.isHidden.toString()); // NEW
+      formData.append('isAvailable', newProduct.isAvailable.toString()); // NEW
+      formData.append('season', newProduct.season.toString()); // NEW
+      
       // Add original price only if it exists and is not empty
       if (newProduct.originalPrice && newProduct.originalPrice.trim() !== '') {
         formData.append('originalPrice', newProduct.originalPrice.toString());
@@ -329,6 +368,7 @@ const ProductsManagement: React.FC = () => {
       const validSizes = newProduct.sizes.filter(size => size.trim() !== '');
       if (validSizes.length > 0) {
         validSizes.forEach((size, index) => {
+          // Use bracket notation for array binding if your backend expects it for form data
           formData.append(`sizes[${index}]`, size.trim());
         });
       } else {
@@ -340,6 +380,7 @@ const ProductsManagement: React.FC = () => {
       const validColors = newProduct.colors.filter(color => color.trim() !== '');
       if (validColors.length > 0) {
         validColors.forEach((color, index) => {
+           // Use bracket notation for array binding
           formData.append(`colors[${index}]`, color.trim());
         });
       } else {
@@ -458,11 +499,14 @@ const ProductsManagement: React.FC = () => {
       if (result) {
         const updatedProductWithImages = {
           ...result,
-          inStock: true,
+          inStock: result.isAvailable || false,
           isOffer: result.isFeatured || false,
+          isHidden: result.isHidden || false, // NEW
+          isAvailable: result.isAvailable || false, // NEW
+          season: result.season ?? 0, // NEW
           images: result.images ? result.images.map((img: ProductImage) => ({
             ...img,
-            imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images')
+            imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images') || img.imagePath.startsWith('/uploads')
               ? `${apiUrl}${img.imagePath}`
               : img.imagePath,
           })) : editingProduct.images, // Keep existing images if no new ones in response
@@ -505,9 +549,13 @@ const ProductsManagement: React.FC = () => {
       category: 0,
       isOffer: false,
       images: [''],
+      isHidden: false, // NEW
+      isAvailable: false, // NEW
+      season: 0, // NEW
     });
   };
 
+  // 5. UPDATED: Load new properties for editing
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setNewProduct({
@@ -521,11 +569,16 @@ const ProductsManagement: React.FC = () => {
       colors: product.colors,
       category: product.category,
       isOffer: product.isOffer || false,
+      isHidden: product.isHidden, // NEW
+      isAvailable: product.isAvailable, // NEW
+      season: product.season, // NEW
     });
     setShowEditProduct(true);
     setShowSidebar(false); // Close sidebar on mobile
   };
 
+  // ... (handleDeleteProduct, handleImageUpload, field helpers remain unchanged)
+  
   const handleDeleteProduct = async (productId: string) => {
     const productToDelete = products.find(p => p.id === productId);
     if (!confirm(`هل أنت متأكد من حذف المنتج "${productToDelete?.name}"؟\n\nتحذير: إذا كان المنتج موجود في عربات التسوق أو الطلبات، فلن يمكن حذفه.`)) {
@@ -639,6 +692,7 @@ const ProductsManagement: React.FC = () => {
     }
   };
 
+
   if (!isAuthenticated) {
     return <div className="p-4 text-center">جاري التحقق من المصادقة...</div>;
   }
@@ -648,7 +702,7 @@ const ProductsManagement: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50" dir="rtl">
       {/* Mobile Header */}
       <div className="lg:hidden bg-white shadow-sm border-b border-gray-200">
         <div className="flex items-center justify-between p-4">
@@ -665,8 +719,11 @@ const ProductsManagement: React.FC = () => {
       <div className="flex">
         {/* Mobile Sidebar */}
         {showSidebar && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden">
-            <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl">
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden" onClick={() => setShowSidebar(false)}>
+            <div 
+              className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl"
+              onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
+            >
               <div className="p-4">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-semibold text-gray-800">إحصائيات سريعة</h3>
@@ -730,19 +787,33 @@ const ProductsManagement: React.FC = () => {
                             <Plus size={20} />
                             <span>إضافة منتج</span>
                           </button>
+                          <button
+                            onClick={handleLogout}
+                            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors flex items-center"
+                          >
+                            تسجيل خروج
+                          </button>
                         </div>
                       </div>
 
                       {/* Mobile Add Button */}
                       <div className="lg:hidden mb-4">
-                        <button
-                          onClick={() => setShowAddProduct(true)}
-                          disabled={isLoading}
-                          className="w-full bg-pink-600 text-white px-4 py-3 rounded-lg hover:bg-pink-700 transition-colors flex items-center justify-center space-x-reverse space-x-2 disabled:opacity-50"
-                        >
-                          <Plus size={20} />
-                          <span>إضافة منتج جديد</span>
-                        </button>
+                        <div className="flex justify-between items-center">
+                          <button
+                            onClick={() => setShowAddProduct(true)}
+                            disabled={isLoading}
+                            className="flex-1 bg-pink-600 text-white px-4 py-3 rounded-lg hover:bg-pink-700 transition-colors flex items-center justify-center space-x-reverse space-x-2 disabled:opacity-50 ml-2"
+                          >
+                            <Plus size={20} />
+                            <span>إضافة منتج</span>
+                          </button>
+                           <button
+                            onClick={handleLogout}
+                            className="bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 transition-colors"
+                          >
+                            خروج
+                          </button>
+                        </div>
                       </div>
 
                       {/* Product Form */}
@@ -759,7 +830,7 @@ const ProductsManagement: React.FC = () => {
                                 setEditingProduct(null);
                                 resetProductForm();
                               }}
-                              className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg lg:hidden"
+                              className="p-2 text-gray-500 hover:bg-gray-200 rounded-lg"
                             >
                               <X size={20} />
                             </button>
@@ -833,18 +904,51 @@ const ProductsManagement: React.FC = () => {
                                   <option value={1}>قسم الأطفال</option>
                                 </select>
                               </div>
-                              <div className="flex items-center pt-8">
-                                <label className="flex items-center space-x-reverse space-x-3">
-                                  <input
-                                    type="checkbox"
-                                    checked={newProduct.isOffer}
-                                    onChange={(e) => setNewProduct(prev => ({ ...prev, isOffer: e.target.checked }))}
-                                    className="w-5 h-5 text-pink-600"
-                                  />
-                                  <span className="text-sm font-medium text-gray-700">عرض خاص</span>
-                                </label>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">الموسم</label>
+                                <select
+                                  value={newProduct.season}
+                                  onChange={(e) => setNewProduct(prev => ({ ...prev, season: Number(e.target.value) }))}
+                                  className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right"
+                                  dir="rtl"
+                                >
+                                  <option value={0}>شتوي</option>
+                                  <option value={1}>صيفي</option>
+                                </select>
                               </div>
                             </div>
+                            
+                            {/* NEW: Toggles for isOffer, isHidden, isAvailable */}
+                            <div className="flex flex-wrap gap-6 pt-2">
+                                <label className="flex items-center space-x-reverse space-x-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={newProduct.isOffer}
+                                        onChange={(e) => setNewProduct(prev => ({ ...prev, isOffer: e.target.checked }))}
+                                        className="w-5 h-5 text-pink-600 rounded"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">عرض خاص</span>
+                                </label>
+                                <label className="flex items-center space-x-reverse space-x-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={newProduct.isHidden}
+                                        onChange={(e) => setNewProduct(prev => ({ ...prev, isHidden: e.target.checked }))}
+                                        className="w-5 h-5 text-blue-600 rounded"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">مخفي عن العملاء</span>
+                                </label>
+                                <label className="flex items-center space-x-reverse space-x-3">
+                                    <input
+                                        type="checkbox"
+                                        checked={newProduct.isAvailable}
+                                        onChange={(e) => setNewProduct(prev => ({ ...prev, isAvailable: e.target.checked }))}
+                                        className="w-5 h-5 text-green-600 rounded"
+                                    />
+                                    <span className="text-sm font-medium text-gray-700">متاح / متوفر</span>
+                                </label>
+                            </div>
+
 
                             {/* Description */}
                             <div>
@@ -991,21 +1095,33 @@ const ProductsManagement: React.FC = () => {
                           </div>
                         ) : (
                           products.map(product => {
-                            const mainImage = product.images.find(img => img.isMain)?.imagePath || product.images[0]?.imagePath || '/images/fallback.jpg';
+                            const mainImage = product.images.find(img => img.isMain)?.imagePath || product.images[0]?.imagePath || `${apiUrl}/images/fallback.jpg`;
+                            
+                            // Determine product status based on new fields
+                            const isHidden = product.isHidden;
+                            const isAvailable = product.isAvailable;
+                            const seasonText = product.season === 1 ? 'صيفي' : 'شتوي';
+                            
                             return (
                               <div key={product.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                                 <div className="flex flex-col sm:flex-row gap-4">
                                   {/* Product Image */}
-                                  <div className="flex-shrink-0">
+                                  <div className="flex-shrink-0 relative">
                                     <img
                                       src={mainImage}
                                       alt={product.name}
                                       className="w-full sm:w-20 lg:w-24 h-48 sm:h-20 lg:h-24 object-cover rounded-lg"
                                       onError={(e) => {
                                         console.error('Failed to load image for product', product.name, ':', mainImage);
-                                        e.currentTarget.src = '/images/fallback.jpg';
+                                        e.currentTarget.src = `${apiUrl}/images/fallback.jpg`;
                                       }}
                                     />
+                                    {/* Status Overlay for Hidden/Unavailable */}
+                                    {isHidden && (
+                                        <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center rounded-lg">
+                                            <EyeOff size={24} className="text-white"/>
+                                        </div>
+                                    )}
                                   </div>
 
                                   {/* Product Info */}
@@ -1027,6 +1143,24 @@ const ProductsManagement: React.FC = () => {
                                           {product.isOffer && (
                                             <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">عرض خاص</span>
                                           )}
+                                          
+                                          {/* NEW: Display Season */}
+                                          <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full flex items-center">
+                                              <Zap size={12} className='ml-1'/> {seasonText}
+                                          </span>
+
+                                          {/* NEW: Display isHidden / isAvailable status */}
+                                          <span className={`text-xs px-2 py-1 rounded-full flex items-center ${
+                                              isAvailable ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                                          }`}>
+                                              <Package size={12} className='ml-1'/> {isAvailable ? 'متاح' : 'غير متاح'}
+                                          </span>
+                                          <span className={`text-xs px-2 py-1 rounded-full flex items-center ${
+                                              isHidden ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                                          }`}>
+                                              {isHidden ? <EyeOff size={12} className='ml-1'/> : <Eye size={12} className='ml-1'/>}
+                                              {isHidden ? 'مخفي' : 'مرئي'}
+                                          </span>
                                         </div>
                                         {product.description && (
                                           <p className="text-sm text-gray-600 mt-2 line-clamp-2">{product.description}</p>
@@ -1034,7 +1168,7 @@ const ProductsManagement: React.FC = () => {
                                       </div>
 
                                       {/* Action Buttons */}
-                                      <div className="flex sm:flex-col gap-2 sm:ml-4">
+                                      <div className="flex sm:flex-col gap-2 sm:mr-4">
                                         <button
                                           onClick={() => handleEditProduct(product)}
                                           disabled={isLoading}
@@ -1102,7 +1236,8 @@ const ProductsManagement: React.FC = () => {
                             </button>
                             
                             <div className="flex items-center space-x-reverse space-x-1">
-                              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                              {/* Page buttons logic */}
+                              {Array.from({ length: totalPages > 5 ? 5 : totalPages }, (_, i) => {
                                 let pageNum;
                                 if (totalPages <= 5) {
                                   pageNum = i + 1;
@@ -1113,6 +1248,9 @@ const ProductsManagement: React.FC = () => {
                                 } else {
                                   pageNum = currentPage - 2 + i;
                                 }
+                                
+                                // Boundary check for calculated pageNum
+                                if (pageNum < 1 || pageNum > totalPages) return null;
                                 
                                 return (
                                   <button
