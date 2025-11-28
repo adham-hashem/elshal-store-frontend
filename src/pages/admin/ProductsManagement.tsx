@@ -149,7 +149,7 @@ const ProductsManagement: React.FC = () => {
             rowVersion: item.rowVersion,
             images: item.images.map(img => ({
               id: img.id,
-              // FIX: Simplified URL construction for relative paths starting with /
+              // URL construction: Append apiUrl only if the path is relative (starts with / but not a domain)
               imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
@@ -289,7 +289,7 @@ const ProductsManagement: React.FC = () => {
           season: result.season ?? 0,
           images: result.images.map((img: ProductImage) => ({
             ...img,
-             // FIX: Simplified URL construction for relative paths starting with /
+             // URL construction
             imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
@@ -460,7 +460,7 @@ const ProductsManagement: React.FC = () => {
           season: result.season ?? 0,
           images: result.images ? result.images.map((img: ProductImage) => ({
             ...img,
-             // FIX: Simplified URL construction for relative paths starting with /
+             // URL construction
             imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
@@ -1043,9 +1043,8 @@ const ProductsManagement: React.FC = () => {
                           </div>
                         ) : (
                           products.map(product => {
-                            // ❗ FIX: Use absolute path for fallback image (assuming it's in public folder)
-                            const fallbackImagePath = '/fallback.jpg'; 
-                            const mainImage = product.images.find(img => img.isMain)?.imagePath || product.images[0]?.imagePath || fallbackImagePath;
+                            // ❗ CHANGE: No fallback path specified. If images array is empty, mainImage will be undefined.
+                            const mainImage = product.images.find(img => img.isMain)?.imagePath || product.images[0]?.imagePath; 
                             
                             // Determine product status based on new fields
                             const isHidden = product.isHidden;
@@ -1058,13 +1057,13 @@ const ProductsManagement: React.FC = () => {
                                   {/* Product Image */}
                                   <div className="flex-shrink-0 relative">
                                     <img
+                                      // ❗ CHANGE: If mainImage is undefined, the src attribute will be empty, showing the broken image icon immediately.
                                       src={mainImage}
                                       alt={product.name}
                                       className="w-full sm:w-20 lg:w-24 h-48 sm:h-20 lg:h-24 object-cover rounded-lg"
                                       onError={(e) => {
-                                        console.error('Failed to load image for product', product.name, ':', mainImage);
-                                        // ❗ FIX: Use absolute path for fallback image
-                                        e.currentTarget.src = fallbackImagePath;
+                                        console.error('Failed to load image for product', product.name, ':', e.currentTarget.src);
+                                        // ❗ CHANGE: Do nothing here. The browser will show the broken image icon.
                                       }}
                                     />
                                     {/* Status Overlay for Hidden/Unavailable */}
