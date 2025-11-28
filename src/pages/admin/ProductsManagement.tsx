@@ -149,8 +149,8 @@ const ProductsManagement: React.FC = () => {
             rowVersion: item.rowVersion,
             images: item.images.map(img => ({
               id: img.id,
-              // Fix image path construction: Ensure apiUrl is only prepended if the path is relative (starts with a slash but not a domain)
-              imagePath: img.imagePath && (img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images') || img.imagePath.startsWith('/uploads')) && !img.imagePath.startsWith(apiUrl)
+              // FIX: Simplified URL construction for relative paths starting with /
+              imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
               isMain: img.isMain,
@@ -289,8 +289,8 @@ const ProductsManagement: React.FC = () => {
           season: result.season ?? 0,
           images: result.images.map((img: ProductImage) => ({
             ...img,
-             // Fix image path construction
-            imagePath: img.imagePath && (img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images') || img.imagePath.startsWith('/uploads')) && !img.imagePath.startsWith(apiUrl)
+             // FIX: Simplified URL construction for relative paths starting with /
+            imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
           })),
@@ -460,8 +460,8 @@ const ProductsManagement: React.FC = () => {
           season: result.season ?? 0,
           images: result.images ? result.images.map((img: ProductImage) => ({
             ...img,
-             // Fix image path construction
-            imagePath: img.imagePath && (img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images') || img.imagePath.startsWith('/uploads')) && !img.imagePath.startsWith(apiUrl)
+             // FIX: Simplified URL construction for relative paths starting with /
+            imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
                 ? `${apiUrl}${img.imagePath}`
                 : img.imagePath,
           })) : editingProduct.images,
