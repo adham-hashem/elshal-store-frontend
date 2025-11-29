@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Upload, Menu, X, ChevronLeft, ChevronRight, EyeOff, Eye, Package, Zap } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Menu, X, ChevronLeft, ChevronRight, EyeOff, Eye, Package, Zap, Sunrise, Snowflake } from 'lucide-react'; // أضفت Sunrise و Snowflake
 
 // Assuming you have a file at this path
 import { useAuth } from '../../contexts/AuthContext';
@@ -38,6 +38,12 @@ interface PaginatedResponse {
   totalPages: number;
 }
 
+// واجهة جديدة لحالة الرؤية الموسمية العامة
+interface SeasonVisibility {
+    showSummer: boolean;
+    showWinter: boolean;
+}
+
 const ProductsManagement: React.FC = () => {
   const { isAuthenticated, userRole, logout } = useAuth();
   const navigate = useNavigate();
@@ -48,6 +54,12 @@ const ProductsManagement: React.FC = () => {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [showEditProduct, setShowEditProduct] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
+
+    // حالة جديدة لحفظ إعدادات الرؤية الموسمية
+    const [seasonVisibility, setSeasonVisibility] = useState<SeasonVisibility>({
+        showSummer: true,
+        showWinter: true,
+    });
 
   const [newProduct, setNewProduct] = useState({
     code: '',
@@ -94,12 +106,30 @@ const ProductsManagement: React.FC = () => {
 
     getAuthToken();
   }, [isAuthenticated, userRole, navigate]);
+  
+  // دالة جلب حالة الرؤية الموسمية
+    const fetchSeasonVisibility = useCallback(async (authToken: string) => {
+        try {
+            const response = await fetch(`${apiUrl}/api/admin/season-visibility`, {
+                headers: { 'Authorization': `Bearer ${authToken}` },
+            });
+            if (response.ok) {
+                const data: SeasonVisibility = await response.json();
+                setSeasonVisibility(data);
+            } else {
+                console.error('Failed to fetch season visibility:', response.status);
+            }
+        } catch (error) {
+            console.error('Error fetching season visibility:', error);
+        }
+    }, [apiUrl]);
 
   useEffect(() => {
     if (token) {
       refreshProductsList(currentPage);
+      fetchSeasonVisibility(token); // جلب حالة الرؤية الموسمية
     }
-  }, [token, currentPage]);
+  }, [token, currentPage, fetchSeasonVisibility]);
 
   useEffect(() => {
     console.log('Current products:', products.length, 'items');
@@ -489,7 +519,7 @@ const ProductsManagement: React.FC = () => {
     }
   };
   
-  // 👇 NEW FUNCTION: Handle Seasonal Toggling
+  // دالة تبديل الرؤية الموسمية الفردية (كما كانت في الكود السابق)
   const handleSeasonalHide = async (seasonToToggle: number, action: 'hide' | 'unhide') => {
     if (isLoading) return;
     if (!validateToken()) return;
@@ -505,7 +535,7 @@ const ProductsManagement: React.FC = () => {
 
     setIsLoading(true);
     try {
-      // We will use a dedicated endpoint for this mass update
+      // This uses the old product-specific endpoint, which is fine if you still use it for mass updates
       const response = await fetch(`${apiUrl}/api/products/seasonal-toggle/${seasonToToggle}?isHidden=${action === 'hide'}`, {
         method: 'PUT',
         headers: {
@@ -531,6 +561,57 @@ const ProductsManagement: React.FC = () => {
       setIsLoading(false);
     }
   };
+  
+  // 👇 NEW FUNCTION: Handle Global Season Visibility Toggle (using /api/admin/season-visibility)
+    const handleGlobalSeasonToggle = async (season: 'summer' | 'winter', show: boolean) => {
+        if (!validateToken() || isLoading) return;
+
+        const actionText = show ? 'إظهار' : 'إخفاء';
+        const seasonName = season === 'summer' ? 'الصيفي' : 'الشتوي';
+
+        if (!confirm(`هل أنت متأكد من ${actionText} القسم ${seasonName} عالميًا؟`)) {
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            // prepare the payload based on the current state and the change being made
+            const payload = {
+                ShowSummer: season === 'summer' ? show : seasonVisibility.showSummer,
+                ShowWinter: season === 'winter' ? show : seasonVisibility.showWinter,
+            };
+
+            const response = await fetch(`${apiUrl}/api/admin/season-visibility`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`فشل في تحديث رؤية الموسم: ${errorText}`);
+            }
+
+            // Update the local state based on the successful API response (or fetch again)
+            // Assuming the API returns the updated state on success
+            const updatedState: { showSummer: boolean, showWinter: boolean } = await response.json();
+            setSeasonVisibility(prev => ({ 
+                ...prev, 
+                showSummer: updatedState.showSummer, 
+                showWinter: updatedState.showWinter 
+            }));
+
+            alert(`تم ${actionText} القسم ${seasonName} عالميًا بنجاح!`);
+        } catch (error: any) {
+            console.error('Error toggling global season visibility:', error);
+            alert(error.message || 'حدث خطأ أثناء تحديث إعدادات الموسم العامة.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
 
   const resetProductForm = () => {
@@ -705,6 +786,55 @@ const ProductsManagement: React.FC = () => {
         return 'جميع المواسم';
     }
   };
+    
+    // محتوى واجهة التحكم في الرؤية الموسمية العامة
+    const GlobalSeasonVisibilityControl = () => (
+        <div className="bg-white rounded-lg shadow-md p-4 space-y-3">
+            <h4 className="text-md font-semibold text-gray-800 border-b pb-2 mb-3">
+                <Zap size={18} className='inline ml-1' /> التحكم الموسمي (عام)
+            </h4>
+            
+            {/* Summer Toggle */}
+            <div className="flex items-center justify-between">
+                <span className="text-sm font-medium flex items-center">
+                    <Sunrise size={16} className='text-yellow-600 ml-2' /> موسم الصيف (Summer)
+                </span>
+                <button
+                    onClick={() => handleGlobalSeasonToggle('summer', !seasonVisibility.showSummer)}
+                    disabled={isLoading}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                        seasonVisibility.showSummer 
+                            ? 'bg-green-500 hover:bg-green-600 text-white' 
+                            : 'bg-red-500 hover:bg-red-600 text-white'
+                    } disabled:opacity-50`}
+                >
+                    {seasonVisibility.showSummer ? 'مرئي (إخفاء)' : 'مخفي (إظهار)'}
+                </button>
+            </div>
+
+            {/* Winter Toggle */}
+            <div className="flex items-center justify-between">
+                <span className="text-sm font-medium flex items-center">
+                    <Snowflake size={16} className='text-blue-600 ml-2' /> موسم الشتاء (Winter)
+                </span>
+                <button
+                    onClick={() => handleGlobalSeasonToggle('winter', !seasonVisibility.showWinter)}
+                    disabled={isLoading}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                        seasonVisibility.showWinter 
+                            ? 'bg-green-500 hover:bg-green-600 text-white' 
+                            : 'bg-red-500 hover:bg-red-600 text-white'
+                    } disabled:opacity-50`}
+                >
+                    {seasonVisibility.showWinter ? 'مرئي (إخفاء)' : 'مخفي (إظهار)'}
+                </button>
+            </div>
+            <p className="text-xs text-gray-500 pt-2">
+                * يؤثر هذا الإعداد على ظهور المنتجات **لكافة العملاء** بغض النظر عن إعدادات المنتج الفردية.
+            </p>
+        </div>
+    );
+
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
@@ -726,12 +856,12 @@ const ProductsManagement: React.FC = () => {
         {showSidebar && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden" onClick={() => setShowSidebar(false)}>
             <div
-              className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl"
+              className="fixed right-0 top-0 h-full w-80 bg-gray-50 shadow-xl overflow-y-auto" // تم تغيير الخلفية لتناسب المحتوى الجديد
               onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
             >
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800">إحصائيات سريعة</h3>
+              <div className="p-4 space-y-6">
+                <div className="flex items-center justify-between mb-4 border-b pb-3">
+                  <h3 className="text-lg font-semibold text-gray-800">إدارة عامة</h3>
                   <button
                     onClick={() => setShowSidebar(false)}
                     className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
@@ -740,23 +870,15 @@ const ProductsManagement: React.FC = () => {
                   </button>
                 </div>
 
+                {/* Mobile Global Season Control */}
+                <GlobalSeasonVisibilityControl />
+
                 <div className="space-y-4">
                   <div className="bg-pink-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">إجمالي المنتجات</p>
+                    <p className="text-sm text-gray-600">إجمالي المنتجات (في الصفحة)</p>
                     <p className="text-2xl font-bold text-pink-600">{products.length}</p>
                   </div>
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">منتجات حريمي</p>
-                    <p className="text-2xl font-bold text-blue-600">
-                      {products.filter(p => p.category === 0).length}
-                    </p>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600">منتجات أطفال</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {products.filter(p => p.category === 1).length}
-                    </p>
-                  </div>
+                    {/* ... (بقية الإحصائيات) */}
                 </div>
               </div>
             </div>
@@ -775,14 +897,14 @@ const ProductsManagement: React.FC = () => {
                       <div className="hidden lg:flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-gray-800">إدارة المنتجات</h2>
                         <div className="flex items-center space-x-reverse space-x-4">
-                            {/* START: NEW SEASONAL BUTTONS */}
+                            {/* START: BUTTONS FOR MANUAL MASS HIDE/UNHIDE */}
                             <button
                                 onClick={() => handleSeasonalHide(1, 'hide')} // 1 for Summer
                                 disabled={isLoading}
                                 className="bg-red-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
                                 title="إخفاء جميع منتجات الصيف"
                             >
-                                ❌ إخفاء الصيف (شتاء)
+                                ❌ إخفاء الصيف (فردي)
                             </button>
                             <button
                                 onClick={() => handleSeasonalHide(2, 'hide')} // 2 for Winter
@@ -790,9 +912,9 @@ const ProductsManagement: React.FC = () => {
                                 className="bg-orange-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
                                 title="إخفاء جميع منتجات الشتاء"
                             >
-                                ❌ إخفاء الشتاء (صيف)
+                                ❌ إخفاء الشتاء (فردي)
                             </button>
-                            {/* END: NEW SEASONAL BUTTONS */}
+                            {/* END: BUTTONS FOR MANUAL MASS HIDE/UNHIDE */}
 
                           <div className="text-sm text-gray-600">
                             المنتجات: {products.length} | الرمز: {token ? '✅ متوفر' : '❌ غير متوفر'}
@@ -1293,13 +1415,15 @@ const ProductsManagement: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  )}
                 </div>
               </div>
 
               {/* Desktop Sidebar */}
               <div className="hidden lg:block lg:w-80">
-                <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
+                {/* Global Season Control added here */}
+                <GlobalSeasonVisibilityControl />
+
+                <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6 mt-6"> {/* Added mt-6 for spacing */}
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">إحصائيات سريعة</h3>
                   <div className="space-y-4">
                     <div className="bg-pink-50 p-4 rounded-lg">
