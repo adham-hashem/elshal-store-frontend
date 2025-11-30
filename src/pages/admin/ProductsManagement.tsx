@@ -835,101 +835,103 @@ const handleGlobalSeasonToggle = async (season: 'summer' | 'winter', show: boole
     }
   };
     
-    // محتوى واجهة التحكم في الرؤية الموسمية العامة
-const GlobalSeasonVisibilityControl = () => (
-  <div className="bg-white rounded-lg shadow-md p-4 space-y-3 mb-6">
-    <h4 className="text-md font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center">
-      <Zap size={18} className="inline ml-1" /> 
-      التحكم الموسمي (عام)
-    </h4>
-    
-    {/* Summer Toggle */}
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium flex items-center">
-        <Sunrise size={16} className="text-yellow-600 ml-2" /> 
-        موسم الصيف (Summer)
-      </span>
-      <button
-        onClick={() => handleGlobalSeasonToggle('summer', !seasonVisibility.showSummer)}
-        disabled={isLoading}
-        className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
-          seasonVisibility.showSummer 
-            ? 'bg-green-500 hover:bg-green-600 text-white' 
-            : 'bg-red-500 hover:bg-red-600 text-white'
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-      >
-        {isLoading ? (
-          <span className="flex items-center">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-            جاري...
-          </span>
-        ) : seasonVisibility.showSummer ? (
-          <span className="flex items-center">
-            <Eye size={16} className="ml-1" />
-            مرئي (إخفاء)
-          </span>
-        ) : (
-          <span className="flex items-center">
-            <EyeOff size={16} className="ml-1" />
-            مخفي (إظهار)
-          </span>
-        )}
-      </button>
-    </div>
+// محتوى واجهة التحكم في الرؤية الموسمية العامة
+function GlobalSeasonVisibilityControl() {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-4 space-y-3 mb-6">
+      <h4 className="text-md font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center">
+        <Zap size={18} className="inline ml-1" /> 
+        التحكم الموسمي (عام)
+      </h4>
+      
+      {/* Summer Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium flex items-center">
+          <Sunrise size={16} className="text-yellow-600 ml-2" /> 
+          موسم الصيف (Summer)
+        </span>
+        <button
+          onClick={() => handleGlobalSeasonToggle('summer', !seasonVisibility.showSummer)}
+          disabled={isLoading}
+          className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+            seasonVisibility.showSummer 
+              ? 'bg-green-500 hover:bg-green-600 text-white' 
+              : 'bg-red-500 hover:bg-red-600 text-white'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {isLoading ? (
+            <span className="flex items-center">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              جاري...
+            </span>
+          ) : seasonVisibility.showSummer ? (
+            <span className="flex items-center">
+              <Eye size={16} className="ml-1" />
+              مرئي (إخفاء)
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <EyeOff size={16} className="ml-1" />
+              مخفي (إظهار)
+            </span>
+          )}
+        </button>
+      </div>
 
-    {/* Winter Toggle */}
-    <div className="flex items-center justify-between">
-      <span className="text-sm font-medium flex items-center">
-        <Snowflake size={16} className="text-blue-600 ml-2" /> 
-        موسم الشتاء (Winter)
-      </span>
-      <button
-        onClick={() => handleGlobalSeasonToggle('winter', !seasonVisibility.showWinter)}
-        disabled={isLoading}
-        className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
-          seasonVisibility.showWinter 
-            ? 'bg-green-500 hover:bg-green-600 text-white' 
-            : 'bg-red-500 hover:bg-red-600 text-white'
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
-      >
-        {isLoading ? (
-          <span className="flex items-center">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-            جاري...
-          </span>
-        ) : seasonVisibility.showWinter ? (
-          <span className="flex items-center">
-            <Eye size={16} className="ml-1" />
-            مرئي (إخفاء)
-          </span>
-        ) : (
-          <span className="flex items-center">
-            <EyeOff size={16} className="ml-1" />
-            مخفي (إظهار)
-          </span>
-        )}
-      </button>
-    </div>
-    
-    {/* Status Summary */}
-    <div className="bg-gray-50 p-3 rounded-lg mt-3">
-      <p className="text-xs text-gray-600 text-center">
-        الحالة الحالية: 
-        <span className={`mx-1 ${seasonVisibility.showSummer ? 'text-green-600' : 'text-red-600'}`}>
-          الصيف {seasonVisibility.showSummer ? 'مرئي' : 'مخفي'}
+      {/* Winter Toggle */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium flex items-center">
+          <Snowflake size={16} className="text-blue-600 ml-2" /> 
+          موسم الشتاء (Winter)
         </span>
-        | 
-        <span className={`mx-1 ${seasonVisibility.showWinter ? 'text-green-600' : 'text-red-600'}`}>
-          الشتاء {seasonVisibility.showWinter ? 'مرئي' : 'مخفي'}
-        </span>
+        <button
+          onClick={() => handleGlobalSeasonToggle('winter', !seasonVisibility.showWinter)}
+          disabled={isLoading}
+          className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+            seasonVisibility.showWinter 
+              ? 'bg-green-500 hover:bg-green-600 text-white' 
+              : 'bg-red-500 hover:bg-red-600 text-white'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        >
+          {isLoading ? (
+            <span className="flex items-center">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              جاري...
+            </span>
+          ) : seasonVisibility.showWinter ? (
+            <span className="flex items-center">
+              <Eye size={16} className="ml-1" />
+              مرئي (إخفاء)
+            </span>
+          ) : (
+            <span className="flex items-center">
+              <EyeOff size={16} className="ml-1" />
+              مخفي (إظهار)
+            </span>
+          )}
+        </button>
+      </div>
+      
+      {/* Status Summary */}
+      <div className="bg-gray-50 p-3 rounded-lg mt-3">
+        <p className="text-xs text-gray-600 text-center">
+          الحالة الحالية: 
+          <span className={`mx-1 ${seasonVisibility.showSummer ? 'text-green-600' : 'text-red-600'}`}>
+            الصيف {seasonVisibility.showSummer ? 'مرئي' : 'مخفي'}
+          </span>
+          | 
+          <span className={`mx-1 ${seasonVisibility.showWinter ? 'text-green-600' : 'text-red-600'}`}>
+            الشتاء {seasonVisibility.showWinter ? 'مرئي' : 'مخفي'}
+          </span>
+        </p>
+      </div>
+      
+      <p className="text-xs text-gray-500 pt-2 border-t border-gray-200">
+        * يؤثر هذا الإعداد على ظهور المنتجات <strong>لكافة العملاء</strong> بغض النظر عن إعدادات المنتج الفردية.
       </p>
     </div>
-    
-    <p className="text-xs text-gray-500 pt-2 border-t border-gray-200">
-      * يؤثر هذا الإعداد على ظهور المنتجات <strong>لكافة العملاء</strong> بغض النظر عن إعدادات المنتج الفردية.
-    </p>
-  </div>
-);
+  );
+}
 
 
   return (
