@@ -1510,45 +1510,46 @@ function GlobalSeasonVisibilityControl() {
                           <div className="text-center text-sm text-gray-500">
                             إجمالي المنتجات: {products.length} | الصفحة {currentPage} من {totalPages}
                           </div>
-                        </div>
-                      )}
-                    </div>
-                </div>
-              </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-              {/* Desktop Sidebar */}
-              <div className="hidden lg:block lg:w-80">
-                {/* Global Season Control added here */}
-                <GlobalSeasonVisibilityControl />
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block lg:w-80">
+          {/* Global Season Control added here */}
+          <GlobalSeasonVisibilityControl />
 
-                <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6 mt-6"> {/* Added mt-6 for spacing */}
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">إحصائيات سريعة</h3>
-                  <div className="space-y-4">
-                    <div className="bg-pink-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">إجمالي المنتجات</p>
-                      <p className="text-2xl font-bold text-pink-600">{products.length}</p>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">منتجات حريمي</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {products.filter(p => p.category === 0).length}
-                      </p>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-600">منتجات أطفال</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {products.filter(p => p.category === 1).length}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+          <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6 mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">إحصائيات سريعة</h3>
+            <div className="space-y-4">
+              <div className="bg-pink-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">إجمالي المنتجات</p>
+                <p className="text-2xl font-bold text-pink-600">{products.length}</p>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">منتجات حريمي</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {products.filter(p => p.category === 0).length}
+                </p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-600">منتجات أطفال</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {products.filter(p => p.category === 1).length}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
 };
 
 export default ProductsManagement;
