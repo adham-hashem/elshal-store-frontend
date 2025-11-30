@@ -299,8 +299,8 @@ const ProductsManagement: React.FC = () => {
           throw new Error(`فشل في إضافة المنتج: ${response.status} ${response.statusText}`);
         }
       }
-
-      // تحديث القائمة عن طريق إعادة التحميل بعد إضافة المنتج بنجاح
+      
+      // ✅ حل المشكلة #1 جزئي: تحديث القائمة عن طريق إعادة التحميل بعد إضافة المنتج بنجاح
       await refreshProductsList(currentPage);
 
 
@@ -434,13 +434,10 @@ const ProductsManagement: React.FC = () => {
           throw new Error(`فشل في تحديث المنتج (${response.status}): ${errorText || response.statusText}`);
         }
       }
-     
-      // ************************************************************
-     // 🚀 حل المشكلة الأولى: بدلاً من محاولة تحديث المنتج محلياً، قم بإعادة تحميل القائمة بالكامل
-     // هذا يضمن أن يتم عرض أحدث البيانات التي تم حفظها في قاعدة البيانات.
+
+     // 🚀 حل المشكلة #1: قم بإعادة تحميل القائمة بالكامل بعد التحديث الناجح
       console.log('Product updated successfully on server, refreshing list...');
       await refreshProductsList(currentPage); 
-     // ************************************************************
 
       // Close the edit form and reset
       setShowEditProduct(false);
@@ -456,49 +453,8 @@ const ProductsManagement: React.FC = () => {
     }
   };
   
-  // دالة تبديل الرؤية الموسمية الفردية (كما كانت في الكود السابق)
-  const handleSeasonalHide = async (seasonToToggle: number, action: 'hide' | 'unhide') => {
-    if (isLoading) return;
-    if (!validateToken()) return;
+  // 🛑 تمت إزالة دالة handleSeasonalHide() القديمة غير المدعومة من الخلفية
 
-    const actionText = action === 'hide' ? 'إخفاء' : 'إظهار';
-    const seasonName = getSeasonText(seasonToToggle);
-
-    if (!confirm(`هل أنت متأكد من ${actionText} جميع منتجات موسم: ${seasonName}؟\n\nستؤثر هذه العملية على ${
-      products.filter(p => p.season === seasonToToggle).length
-    } منتج في هذه الصفحة.`)) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // This uses the old product-specific endpoint, which is fine if you still use it for mass updates
-      const response = await fetch(`${apiUrl}/api/products/seasonal-toggle/${seasonToToggle}?isHidden=${action === 'hide'}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        // Send body even if unused by backend, for consistency
-        body: JSON.stringify({ isHidden: action === 'hide' }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`فشل في ${actionText} منتجات موسم ${seasonName}: ${errorText}`);
-      }
-
-      alert(`تم ${actionText} جميع منتجات موسم ${seasonName} بنجاح!`);
-      // Refresh list to see changes
-      await refreshProductsList(currentPage);
-    } catch (error: any) {
-      console.error('Error in seasonal hide/unhide:', error);
-      alert(error.message || 'حدث خطأ أثناء التحديث الموسمي');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   // 👇 NEW FUNCTION: Handle Global Season Visibility Toggle (using /api/admin/season-visibility)
     const handleGlobalSeasonToggle = async (season: 'summer' | 'winter', show: boolean) => {
         if (!validateToken() || isLoading) return;
@@ -832,24 +788,7 @@ const ProductsManagement: React.FC = () => {
                       <div className="hidden lg:flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-gray-800">إدارة المنتجات</h2>
                         <div className="flex items-center space-x-reverse space-x-4">
-                            {/* START: BUTTONS FOR MANUAL MASS HIDE/UNHIDE */}
-                            <button
-                                onClick={() => handleSeasonalHide(1, 'hide')} // 1 for Summer
-                                disabled={isLoading}
-                                className="bg-red-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
-                                title="إخفاء جميع منتجات الصيف"
-                            >
-                                ❌ إخفاء الصيف (فردي)
-                            </button>
-                            <button
-                                onClick={() => handleSeasonalHide(2, 'hide')} // 2 for Winter
-                                disabled={isLoading}
-                                className="bg-orange-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
-                                title="إخفاء جميع منتجات الشتاء"
-                            >
-                                ❌ إخفاء الشتاء (فردي)
-                            </button>
-                            {/* END: BUTTONS FOR MANUAL MASS HIDE/UNHIDE */}
+                            {/* 🛑 تم حذف أزرار الإخفاء الفردي غير المدعومة من الخلفية */}
 
                           <div className="text-sm text-gray-600">
                             المنتجات: {products.length} | الرمز: {token ? '✅ متوفر' : '❌ غير متوفر'}
