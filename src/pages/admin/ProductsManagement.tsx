@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Trash2, Upload, Menu, X, ChevronLeft, ChevronRight, EyeOff, Eye, Package, Zap, Sunrise, Snowflake } from 'lucide-react';
+import { Plus, Edit, Trash2, Upload, Menu, X, ChevronLeft, ChevronRight, EyeOff, Eye, Package, Zap, Sunrise, Snowflake } from 'lucide-react'; // أضفت Sunrise و Snowflake
 
 // Assuming you have a file at this path
 import { useAuth } from '../../contexts/AuthContext';
@@ -40,8 +40,8 @@ interface PaginatedResponse {
 
 // واجهة جديدة لحالة الرؤية الموسمية العامة
 interface SeasonVisibility {
-    showSummer: boolean;
-    showWinter: boolean;
+    showSummer: boolean;
+    showWinter: boolean;
 }
 
 const ProductsManagement: React.FC = () => {
@@ -55,11 +55,11 @@ const ProductsManagement: React.FC = () => {
   const [showEditProduct, setShowEditProduct] = useState(false);
   const [showSidebar, setShowSidebar] = useState(false);
 
-    // حالة جديدة لحفظ إعدادات الرؤية الموسمية
-    const [seasonVisibility, setSeasonVisibility] = useState<SeasonVisibility>({
-        showSummer: true,
-        showWinter: true,
-    });
+    // حالة جديدة لحفظ إعدادات الرؤية الموسمية
+    const [seasonVisibility, setSeasonVisibility] = useState<SeasonVisibility>({
+        showSummer: true,
+        showWinter: true,
+    });
 
   const [newProduct, setNewProduct] = useState({
     code: '',
@@ -106,28 +106,43 @@ const ProductsManagement: React.FC = () => {
 
     getAuthToken();
   }, [isAuthenticated, userRole, navigate]);
-  
+  
   // دالة جلب حالة الرؤية الموسمية
-    const fetchSeasonVisibility = useCallback(async (authToken: string) => {
-        try {
-            const response = await fetch(`${apiUrl}/api/admin/season-visibility`, {
-                headers: { 'Authorization': `Bearer ${authToken}` },
-            });
-            if (response.ok) {
-                const data: SeasonVisibility = await response.json();
-                setSeasonVisibility(data);
-            } else {
-                console.error('Failed to fetch season visibility:', response.status);
-            }
-        } catch (error) {
-            console.error('Error fetching season visibility:', error);
-        }
-    }, [apiUrl]);
+const fetchSeasonVisibility = useCallback(async (authToken: string) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/admin/season-visibility`, {
+      headers: { 
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+    });
+    
+    if (response.ok) {
+      const data: SeasonVisibility = await response.json();
+      setSeasonVisibility(data);
+      console.log('Season visibility loaded:', data);
+    } else {
+      console.error('Failed to fetch season visibility:', response.status);
+      // Set default values if fetch fails
+      setSeasonVisibility({
+        showSummer: true,
+        showWinter: true,
+      });
+    }
+  } catch (error) {
+    console.error('Error fetching season visibility:', error);
+    // Set default values on error
+    setSeasonVisibility({
+      showSummer: true,
+      showWinter: true,
+    });
+  }
+}, [apiUrl]);
 
   useEffect(() => {
     if (token) {
       refreshProductsList(currentPage);
-      fetchSeasonVisibility(token); // جلب حالة الرؤية الموسمية
+      fetchSeasonVisibility(token); // جلب حالة الرؤية الموسمية
     }
   }, [token, currentPage, fetchSeasonVisibility]);
 
@@ -299,10 +314,38 @@ const ProductsManagement: React.FC = () => {
           throw new Error(`فشل في إضافة المنتج: ${response.status} ${response.statusText}`);
         }
       }
-      
-      // تحديث القائمة عن طريق إعادة التحميل بعد إضافة المنتج بنجاح
-      await refreshProductsList(currentPage);
 
+      let result = null;
+      const responseText = await response.text();
+      if (responseText && responseText.trim()) {
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.log('Response text:', responseText);
+        }
+      }
+
+      if (result) {
+        const newProductWithImages = {
+          ...result,
+          inStock: result.isAvailable || false,
+          isHidden: result.isHidden || false,
+          isAvailable: result.isAvailable || false,
+          season: result.season ?? 0,
+          images: result.images.map((img: ProductImage) => ({
+            ...img,
+             // URL construction
+            imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
+                ? `${apiUrl}${img.imagePath}`
+                : img.imagePath,
+          })),
+        };
+        setProducts(prevProducts => [...prevProducts, newProductWithImages]);
+      } else {
+        console.log('No product data returned from server, refreshing product list');
+        await refreshProductsList(currentPage);
+      }
 
       setShowAddProduct(false);
       resetProductForm();
@@ -435,9 +478,47 @@ const ProductsManagement: React.FC = () => {
         }
       }
 
-     // 🚀 حل المشكلة #1: قم بإعادة تحميل القائمة بالكامل بعد التحديث الناجح
-      console.log('Product updated successfully on server, refreshing list...');
-      await refreshProductsList(currentPage); 
+      let result = null;
+      const responseText = await response.text();
+      console.log('=== SUCCESS RESPONSE ===');
+      console.log('Response text:', responseText);
+      console.log('=== END SUCCESS RESPONSE ===');
+
+      if (responseText && responseText.trim()) {
+        try {
+          result = JSON.parse(responseText);
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          console.log('Raw response text:', responseText);
+        }
+      }
+
+      // Update the products list
+      if (result) {
+        const updatedProductWithImages = {
+          ...result,
+          inStock: result.isAvailable || false,
+          isHidden: result.isHidden || false,
+          isAvailable: result.isAvailable || false,
+          season: result.season ?? 0,
+          images: result.images ? result.images.map((img: ProductImage) => ({
+            ...img,
+             // URL construction
+            imagePath: img.imagePath && img.imagePath.startsWith('/') && !img.imagePath.startsWith('http')
+                ? `${apiUrl}${img.imagePath}`
+                : img.imagePath,
+          })) : editingProduct.images,
+        };
+
+        setProducts(prevProducts =>
+          prevProducts.map(product =>
+            product.id === editingProduct.id ? updatedProductWithImages : product
+          )
+        );
+      } else {
+        console.log('No product data returned from server, refreshing product list');
+        await refreshProductsList(currentPage);
+      }
 
       // Close the edit form and reset
       setShowEditProduct(false);
@@ -452,59 +533,133 @@ const ProductsManagement: React.FC = () => {
       setIsLoading(false);
     }
   };
-  
-  // 🛑 تم إزالة الدالة handleSeasonalHide() هنا لمنع استخدام نقطة النهاية غير الموجودة
+  
+  // دالة تبديل الرؤية الموسمية الفردية (كما كانت في الكود السابق)
+  const handleSeasonalHide = async (seasonToToggle: number, action: 'hide' | 'unhide') => {
+    if (isLoading) return;
+    if (!validateToken()) return;
 
+    const actionText = action === 'hide' ? 'إخفاء' : 'إظهار';
+    const seasonName = getSeasonText(seasonToToggle);
 
+    if (!confirm(`هل أنت متأكد من ${actionText} جميع منتجات موسم: ${seasonName}؟\n\nستؤثر هذه العملية على ${
+      products.filter(p => p.season === seasonToToggle).length
+    } منتج في هذه الصفحة.`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // This uses the old product-specific endpoint, which is fine if you still use it for mass updates
+      const response = await fetch(`${apiUrl}/api/products/seasonal-toggle/${seasonToToggle}?isHidden=${action === 'hide'}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        // Send body even if unused by backend, for consistency
+        body: JSON.stringify({ isHidden: action === 'hide' }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`فشل في ${actionText} منتجات موسم ${seasonName}: ${errorText}`);
+      }
+
+      alert(`تم ${actionText} جميع منتجات موسم ${seasonName} بنجاح!`);
+      // Refresh list to see changes
+      await refreshProductsList(currentPage);
+    } catch (error: any) {
+      console.error('Error in seasonal hide/unhide:', error);
+      alert(error.message || 'حدث خطأ أثناء التحديث الموسمي');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // 👇 NEW FUNCTION: Handle Global Season Visibility Toggle (using /api/admin/season-visibility)
-    const handleGlobalSeasonToggle = async (season: 'summer' | 'winter', show: boolean) => {
-        if (!validateToken() || isLoading) return;
+const handleGlobalSeasonToggle = async (season: 'summer' | 'winter', show: boolean) => {
+  if (!validateToken() || isLoading) return;
 
-        const actionText = show ? 'إظهار' : 'إخفاء';
-        const seasonName = season === 'summer' ? 'الصيفي' : 'الشتوي';
+  const actionText = show ? 'إظهار' : 'إخفاء';
+  const seasonName = season === 'summer' ? 'الصيفي' : 'الشتوي';
 
-        if (!confirm(`هل أنت متأكد من ${actionText} القسم ${seasonName} عالميًا؟`)) {
-            return;
-        }
+  if (!confirm(`هل أنت متأكد من ${actionText} القسم ${seasonName} عالميًا؟\n\nهذا الإعداد سيؤثر على رؤية جميع المنتجات في هذا الموسم لكافة العملاء.`)) {
+    return;
+  }
 
-        setIsLoading(true);
-        try {
-            // prepare the payload based on the current state and the change being made
-            const payload = {
-                ShowSummer: season === 'summer' ? show : seasonVisibility.showSummer,
-                ShowWinter: season === 'winter' ? show : seasonVisibility.showWinter,
-            };
+  setIsLoading(true);
+  try {
+    // Prepare the payload - only update the season being toggled
+    const payload = {
+      ShowSummer: season === 'summer' ? show : seasonVisibility.showSummer,
+      ShowWinter: season === 'winter' ? show : seasonVisibility.showWinter,
+    };
 
-            const response = await fetch(`${apiUrl}/api/admin/season-visibility`, {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
+    console.log('Sending season visibility update:', payload);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`فشل في تحديث رؤية الموسم: ${errorText}`);
-            }
+    const response = await fetch(`${apiUrl}/api/admin/season-visibility`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
 
-            // Update the local state based on the successful API response
-            const updatedState: { showSummer: boolean, showWinter: boolean } = await response.json();
-            setSeasonVisibility(prev => ({ 
-                ...prev, 
-                showSummer: updatedState.showSummer, 
-                showWinter: updatedState.showWinter 
-            }));
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Season visibility update failed:', response.status, errorText);
+      
+      if (response.status === 401) {
+        throw new Error('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
+      } else if (response.status === 403) {
+        throw new Error('ليس لديك صلاحية للقيام بهذا الإجراء.');
+      } else if (response.status === 400) {
+        throw new Error('بيانات غير صالحة. يرجى المحاولة مرة أخرى.');
+      } else {
+        throw new Error(`فشل في تحديث رؤية الموسم: ${errorText || 'خطأ في الخادم'}`);
+      }
+    }
 
-            alert(`تم ${actionText} القسم ${seasonName} عالميًا بنجاح!`);
-        } catch (error: any) {
-            console.error('Error toggling global season visibility:', error);
-            alert(error.message || 'حدث خطأ أثناء تحديث إعدادات الموسم العامة.');
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    // Parse the successful response
+    const responseText = await response.text();
+    let updatedState;
+    
+    if (responseText && responseText.trim()) {
+      try {
+        updatedState = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Error parsing season visibility response:', parseError);
+        // If parsing fails, use the payload we sent as fallback
+        updatedState = {
+          showSummer: payload.ShowSummer,
+          showWinter: payload.ShowWinter
+        };
+      }
+    } else {
+      // If no response body, use the payload we sent
+      updatedState = {
+        showSummer: payload.ShowSummer,
+        showWinter: payload.ShowWinter
+      };
+    }
+
+    // Update local state
+    setSeasonVisibility({
+      showSummer: updatedState.showSummer ?? payload.ShowSummer,
+      showWinter: updatedState.showWinter ?? payload.ShowWinter
+    });
+
+    alert(`✅ تم ${actionText} القسم ${seasonName} عالميًا بنجاح!`);
+    
+  } catch (error: any) {
+    console.error('Error toggling global season visibility:', error);
+    alert(`❌ ${error.message || 'حدث خطأ أثناء تحديث إعدادات الموسم العامة.'}`);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
 
   const resetProductForm = () => {
@@ -679,54 +834,102 @@ const ProductsManagement: React.FC = () => {
         return 'جميع المواسم';
     }
   };
-    
-    // محتوى واجهة التحكم في الرؤية الموسمية العامة
-    const GlobalSeasonVisibilityControl = () => (
-        <div className="bg-white rounded-lg shadow-md p-4 space-y-3">
-            <h4 className="text-md font-semibold text-gray-800 border-b pb-2 mb-3">
-                <Zap size={18} className='inline ml-1' /> التحكم الموسمي (عام)
-            </h4>
-            
-            {/* Summer Toggle */}
-            <div className="flex items-center justify-between">
-                <span className="text-sm font-medium flex items-center">
-                    <Sunrise size={16} className='text-yellow-600 ml-2' /> موسم الصيف (Summer)
-                </span>
-                <button
-                    onClick={() => handleGlobalSeasonToggle('summer', !seasonVisibility.showSummer)}
-                    disabled={isLoading}
-                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                        seasonVisibility.showSummer 
-                            ? 'bg-green-500 hover:bg-green-600 text-white' 
-                            : 'bg-red-500 hover:bg-red-600 text-white'
-                    } disabled:opacity-50`}
-                >
-                    {seasonVisibility.showSummer ? 'مرئي (إخفاء)' : 'مخفي (إظهار)'}
-                </button>
-            </div>
+    
+    // محتوى واجهة التحكم في الرؤية الموسمية العامة
+const GlobalSeasonVisibilityControl = () => (
+  <div className="bg-white rounded-lg shadow-md p-4 space-y-3 mb-6">
+    <h4 className="text-md font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center">
+      <Zap size={18} className="inline ml-1" /> 
+      التحكم الموسمي (عام)
+    </h4>
+    
+    {/* Summer Toggle */}
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium flex items-center">
+        <Sunrise size={16} className="text-yellow-600 ml-2" /> 
+        موسم الصيف (Summer)
+      </span>
+      <button
+        onClick={() => handleGlobalSeasonToggle('summer', !seasonVisibility.showSummer)}
+        disabled={isLoading}
+        className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+          seasonVisibility.showSummer 
+            ? 'bg-green-500 hover:bg-green-600 text-white' 
+            : 'bg-red-500 hover:bg-red-600 text-white'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {isLoading ? (
+          <span className="flex items-center">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            جاري...
+          </span>
+        ) : seasonVisibility.showSummer ? (
+          <span className="flex items-center">
+            <Eye size={16} className="ml-1" />
+            مرئي (إخفاء)
+          </span>
+        ) : (
+          <span className="flex items-center">
+            <EyeOff size={16} className="ml-1" />
+            مخفي (إظهار)
+          </span>
+        )}
+      </button>
+    </div>
 
-            {/* Winter Toggle */}
-            <div className="flex items-center justify-between">
-                <span className="text-sm font-medium flex items-center">
-                    <Snowflake size={16} className='text-blue-600 ml-2' /> موسم الشتاء (Winter)
-                </span>
-                <button
-                    onClick={() => handleGlobalSeasonToggle('winter', !seasonVisibility.showWinter)}
-                    disabled={isLoading}
-                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                        seasonVisibility.showWinter 
-                            ? 'bg-green-500 hover:bg-green-600 text-white' 
-                            : 'bg-red-500 hover:bg-red-600 text-white'
-                    } disabled:opacity-50`}
-                >
-                    {seasonVisibility.showWinter ? 'مرئي (إخفاء)' : 'مخفي (إظهار)'}
-                </button>
-            </div>
-            <p className="text-xs text-gray-500 pt-2">
-                * يؤثر هذا الإعداد على ظهور المنتجات **لكافة العملاء** بغض النظر عن إعدادات المنتج الفردية.
-            </p>
-        </div>
-    );
+    {/* Winter Toggle */}
+    <div className="flex items-center justify-between">
+      <span className="text-sm font-medium flex items-center">
+        <Snowflake size={16} className="text-blue-600 ml-2" /> 
+        موسم الشتاء (Winter)
+      </span>
+      <button
+        onClick={() => handleGlobalSeasonToggle('winter', !seasonVisibility.showWinter)}
+        disabled={isLoading}
+        className={`px-4 py-2 text-sm rounded-lg transition-colors flex items-center ${
+          seasonVisibility.showWinter 
+            ? 'bg-green-500 hover:bg-green-600 text-white' 
+            : 'bg-red-500 hover:bg-red-600 text-white'
+        } disabled:opacity-50 disabled:cursor-not-allowed`}
+      >
+        {isLoading ? (
+          <span className="flex items-center">
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            جاري...
+          </span>
+        ) : seasonVisibility.showWinter ? (
+          <span className="flex items-center">
+            <Eye size={16} className="ml-1" />
+            مرئي (إخفاء)
+          </span>
+        ) : (
+          <span className="flex items-center">
+            <EyeOff size={16} className="ml-1" />
+            مخفي (إظهار)
+          </span>
+        )}
+      </button>
+    </div>
+    
+    {/* Status Summary */}
+    <div className="bg-gray-50 p-3 rounded-lg mt-3">
+      <p className="text-xs text-gray-600 text-center">
+        الحالة الحالية: 
+        <span className={`mx-1 ${seasonVisibility.showSummer ? 'text-green-600' : 'text-red-600'}`}>
+          الصيف {seasonVisibility.showSummer ? 'مرئي' : 'مخفي'}
+        </span>
+        | 
+        <span className={`mx-1 ${seasonVisibility.showWinter ? 'text-green-600' : 'text-red-600'}`}>
+          الشتاء {seasonVisibility.showWinter ? 'مرئي' : 'مخفي'}
+        </span>
+      </p>
+    </div>
+    
+    <p className="text-xs text-gray-500 pt-2 border-t border-gray-200">
+      * يؤثر هذا الإعداد على ظهور المنتجات <strong>لكافة العملاء</strong> بغض النظر عن إعدادات المنتج الفردية.
+    </p>
+  </div>
+);
 
 
   return (
@@ -763,19 +966,19 @@ const ProductsManagement: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Mobile Global Season Control */}
-                <GlobalSeasonVisibilityControl />
+                {/* Mobile Global Season Control */}
+                <GlobalSeasonVisibilityControl />
 
                 <div className="space-y-4">
                   <div className="bg-pink-50 p-4 rounded-lg">
                     <p className="text-sm text-gray-600">إجمالي المنتجات (في الصفحة)</p>
                     <p className="text-2xl font-bold text-pink-600">{products.length}</p>
                   </div>
-                    {/* ... (بقية الإحصائيات) */}
+                    {/* ... (بقية الإحصائيات) */}
                 </div>
-                
               </div>
             </div>
+          </div>
         )}
 
         <div className="flex-1">
@@ -790,7 +993,24 @@ const ProductsManagement: React.FC = () => {
                       <div className="hidden lg:flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-gray-800">إدارة المنتجات</h2>
                         <div className="flex items-center space-x-reverse space-x-4">
-                            {/* 🛑 تم حذف أزرار الإخفاء الفردي غير المدعومة من الخلفية */}
+                            {/* START: BUTTONS FOR MANUAL MASS HIDE/UNHIDE */}
+                            <button
+                                onClick={() => handleSeasonalHide(1, 'hide')} // 1 for Summer
+                                disabled={isLoading}
+                                className="bg-red-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+                                title="إخفاء جميع منتجات الصيف"
+                            >
+                                ❌ إخفاء الصيف (فردي)
+                            </button>
+                            <button
+                                onClick={() => handleSeasonalHide(2, 'hide')} // 2 for Winter
+                                disabled={isLoading}
+                                className="bg-orange-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50"
+                                title="إخفاء جميع منتجات الشتاء"
+                            >
+                                ❌ إخفاء الشتاء (فردي)
+                            </button>
+                            {/* END: BUTTONS FOR MANUAL MASS HIDE/UNHIDE */}
 
                           <div className="text-sm text-gray-600">
                             المنتجات: {products.length} | الرمز: {token ? '✅ متوفر' : '❌ غير متوفر'}
@@ -1104,8 +1324,8 @@ const ProductsManagement: React.FC = () => {
                         ) : (
                           products.map(product => {
                             // ❗ CHANGE: No fallback path specified. If images array is empty, mainImage will be undefined.
-                            const mainImage = product.images.find(img => img.isMain)?.imagePath || product.images[0]?.imagePath; 
-                            
+                            const mainImage = product.images.find(img => img.isMain)?.imagePath || product.images[0]?.imagePath; 
+                            
                             // Determine product status based on new fields
                             const isHidden = product.isHidden;
                             const isAvailable = product.isAvailable;
@@ -1291,13 +1511,13 @@ const ProductsManagement: React.FC = () => {
                         </div>
                       )}
                     </div>
-                  </div>
+                </div>
               </div>
 
               {/* Desktop Sidebar */}
               <div className="hidden lg:block lg:w-80">
-                {/* Global Season Control added here */}
-                <GlobalSeasonVisibilityControl />
+                {/* Global Season Control added here */}
+                <GlobalSeasonVisibilityControl />
 
                 <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6 mt-6"> {/* Added mt-6 for spacing */}
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">إحصائيات سريعة</h3>
