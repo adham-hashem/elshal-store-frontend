@@ -300,7 +300,7 @@ const ProductsManagement: React.FC = () => {
         }
       }
       
-      // ✅ حل المشكلة #1 جزئي: تحديث القائمة عن طريق إعادة التحميل بعد إضافة المنتج بنجاح
+      // تحديث القائمة عن طريق إعادة التحميل بعد إضافة المنتج بنجاح
       await refreshProductsList(currentPage);
 
 
@@ -453,7 +453,8 @@ const ProductsManagement: React.FC = () => {
     }
   };
   
-  // 🛑 تمت إزالة دالة handleSeasonalHide() القديمة غير المدعومة من الخلفية
+  // 🛑 تم إزالة الدالة handleSeasonalHide() هنا لمنع استخدام نقطة النهاية غير الموجودة
+
 
   // 👇 NEW FUNCTION: Handle Global Season Visibility Toggle (using /api/admin/season-visibility)
     const handleGlobalSeasonToggle = async (season: 'summer' | 'winter', show: boolean) => {
@@ -772,6 +773,7 @@ const ProductsManagement: React.FC = () => {
                   </div>
                     {/* ... (بقية الإحصائيات) */}
                 </div>
+                
               </div>
             </div>
         )}
@@ -1289,7 +1291,7 @@ const ProductsManagement: React.FC = () => {
                         </div>
                       )}
                     </div>
-                </div>
+                  </div>
               </div>
 
               {/* Desktop Sidebar */}
