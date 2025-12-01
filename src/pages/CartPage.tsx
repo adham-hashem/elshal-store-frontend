@@ -88,12 +88,20 @@ const CartPage: React.FC = () => {
         quantity: item.quantity,
         size: item.size,
         color: item.color,
-        images: item.images.map(img => ({
-          ...img,
-          imagePath: img.imagePath.startsWith('/Uploads') || img.imagePath.startsWith('/images')
-            ? `${apiUrl}${img.imagePath}`
-            : img.imagePath,
-        })),
+        images: item.images.map(img => {
+          let fullPath = img.imagePath;
+          // Check if the path is relative (starts with / or doesn't have http/https)
+          if (!fullPath.startsWith('http://') && !fullPath.startsWith('https://')) {
+            // Ensure path starts with /
+            fullPath = fullPath.startsWith('/') ? fullPath : `/${fullPath}`;
+            // Prepend API URL
+            fullPath = `${apiUrl}${fullPath}`;
+          }
+          return {
+            ...img,
+            imagePath: fullPath,
+          };
+        }),
       }));
 
       setCartItems(normalizedItems || []);
