@@ -4,9 +4,10 @@ import { ArrowRight, CreditCard, Truck, Loader2 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
 import { CartItem } from '../types';
 
+// واجهات Typescript
 interface ShippingFee {
   id: string;
-  governorate: string;
+  governorate: string; // تم تغيير governorateMap لاستخدام هذه القيمة مباشرةً
   fee: number;
   deliveryTime: string;
   status: number;
@@ -57,11 +58,13 @@ interface ApiCartResponse {
 const CheckoutPage: React.FC = () => {
   const { state, dispatch } = useApp();
   const navigate = useNavigate();
+
+  // 'governorate' now stores the actual string name fetched from the API
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     address: '',
-    governorate: '',
+    governorate: '', // Will store the actual governorate name (e.g., "القاهره ")
     paymentMethod: 'cash' as 'cash' | 'visa',
     cardNumber: '',
     expiryDate: '',
@@ -69,6 +72,7 @@ const CheckoutPage: React.FC = () => {
     cardName: '',
     discountCode: '',
   });
+
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [shippingFees, setShippingFees] = useState<ShippingFee[]>([]);
   const [loadingShippingFees, setLoadingShippingFees] = useState(true);
@@ -83,36 +87,7 @@ const CheckoutPage: React.FC = () => {
 
   const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
-  const governorateMap = {
-    "7": "الدقهلية",
-    "1": "القاهرة",
-    "2": "الأسكندرية",
-    "3": "بورسعيد",
-    "4": "السويس",
-    "5": "الإسماعيلية",
-    "6": "دمياط",
-    "8": "الشرقية",
-    "9": "القليوبية",
-    "10": "كفر الشيخ",
-    "11": "الغربية",
-    "12": "المنوفية",
-    "13": "البحيرة",
-    "14": "الجيزة",
-    "15": "بنى سويف",
-    "16": "الفيوم",
-    "17": "المنيا",
-    "18": "أسيوط",
-    "19": "سوهاج",
-    "20": "قنا",
-    "21": "أسوان",
-    "22": "مطروح",
-    "23": "الوادى الجديد",
-    "24": "البحر الاحمر",
-    "25": "شمال سيناء",
-    "26": "جنوب سيناء",
-    "27": "الأقصر"
-  };
-
+  // --- Cart Fetching Logic (Unchanged) ---
   const fetchCart = useCallback(async (retryCount = 3, retryDelay = 1000) => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
@@ -122,10 +97,8 @@ const CheckoutPage: React.FC = () => {
       navigate('/login');
       return;
     }
-
     setLoadingCart(true);
     setCartError(null);
-
     for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
         console.log(`Fetching cart, attempt ${attempt}/${retryCount}`);
@@ -134,7 +107,6 @@ const CheckoutPage: React.FC = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-
         if (!response.ok) {
           const errorText = await response.text();
           console.error(`Cart fetch failed with status ${response.status}: ${errorText}`);
@@ -143,10 +115,8 @@ const CheckoutPage: React.FC = () => {
           }
           throw new Error('فشل في جلب بيانات السلة');
         }
-
         const data: ApiCartResponse = await response.json();
         console.log('Cart API response:', data);
-
         const normalizedItems: CartItem[] = data.items?.map(item => ({
           id: item.id,
           product: {
@@ -164,7 +134,6 @@ const CheckoutPage: React.FC = () => {
               : img.imagePath,
           })) || [],
         })) || [];
-
         console.log('Normalized cart items:', normalizedItems);
         dispatch({ type: 'SET_CART', payload: normalizedItems });
         if (normalizedItems.length === 0) {
@@ -189,6 +158,7 @@ const CheckoutPage: React.FC = () => {
     }
   }, [dispatch, navigate, apiUrl]);
 
+  // --- Shipping Fees Fetching Logic (Modified URL and size) ---
   const fetchShippingFees = useCallback(async () => {
     setLoadingShippingFees(true);
     setErrorShippingFees(null);
@@ -197,38 +167,48 @@ const CheckoutPage: React.FC = () => {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
       };
-
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-
+      // Changed pageSize to 30 to cover all governorates if needed, based on the previous structure
       const response = await fetch(`${apiUrl}/api/shipping-fees?pageNumber=1&pageSize=30`, {
         method: 'GET',
         headers,
       });
-
       if (!response.ok) {
         throw new Error(`فشل في جلب رسوم التوصيل: ${response.status}`);
       }
-
       const data: ApiResponse = await response.json();
       console.log('Shipping fees API response:', data);
-      setShippingFees(data.items || []);
+      // Clean up governorate names by removing extra spaces from the API response items
+      const cleanedItems = data.items.map(item => ({
+        ...item,
+        governorate: item.governorate ? item.governorate.trim() : '',
+      })).filter(item => item.governorate); // Filter out any items with empty names
+
+      setShippingFees(cleanedItems || []);
+      // If a governorate was previously selected and is no longer available, clear it
+      if (formData.governorate && !cleanedItems.some(item => item.governorate === formData.governorate)) {
+        setFormData(prev => ({ ...prev, governorate: '' }));
+      }
+
     } catch (err) {
       setErrorShippingFees(err instanceof Error ? err.message : 'فشل في جلب رسوم التوصيل');
     } finally {
       setLoadingShippingFees(false);
     }
-  }, [apiUrl]);
+  }, [apiUrl, formData.governorate]);
 
+  // --- Calculation Logic (Modified to use governorate string) ---
   const { subtotal, selectedGovernorate, shippingFee, discountAmount, total } = useMemo(() => {
     const subtotalCalc = state.cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
-    const selectedGov = shippingFees.find(g => g.governorate === governorateMap[formData.governorate]);
+    // Find shipping fee using the exact governorate string from formData
+    const selectedGov = shippingFees.find(g => g.governorate === formData.governorate);
     const shipFee = selectedGov?.fee || 0;
     const discountAmt = discount?.amount || 0;
     const totalCalc = Math.max(0, subtotalCalc - discountAmt + shipFee);
 
-    console.log('Calculated totals:', { subtotalCalc, shipFee, discountAmt, totalCalc });
+    console.log('Calculated totals:', { subtotalCalc, shipFee, discountAmt, totalCalc, selectedGovernorate: selectedGov });
     return {
       subtotal: subtotalCalc,
       selectedGovernorate: selectedGov,
@@ -238,14 +218,13 @@ const CheckoutPage: React.FC = () => {
     };
   }, [state.cart, shippingFees, formData.governorate, discount]);
 
+  // --- Discount Code Fetching Logic (Unchanged) ---
   const fetchDiscountCode = useCallback(
     async (code: string) => {
       if (!code.trim()) return;
-
       setLoadingDiscount(true);
       setErrorDiscount(null);
       setDiscount(null);
-
       try {
         const response = await fetch(`${apiUrl}/api/discount-codes/code/${code}`, {
           method: 'GET',
@@ -253,23 +232,18 @@ const CheckoutPage: React.FC = () => {
             'Content-Type': 'application/json',
           },
         });
-
         if (!response.ok) {
           throw new Error(`فشل في التحقق من كود الخصم: ${response.status}`);
         }
-
         const data: DiscountCode = await response.json();
         console.log('Discount code API response:', data);
-
         if (!data.isActive) {
           throw new Error('الكود غير صالح أو منتهي الصلاحية');
         }
-
         const subtotalCalc = state.cart.reduce((total, item) => total + (item.product.price * item.quantity), 0);
         if (data.minOrderAmount > subtotalCalc) {
           throw new Error(`يجب أن يكون إجمالي الطلب ${data.minOrderAmount} جنيه على الأقل لاستخدام هذا الكود`);
         }
-
         let discountAmount = 0;
         if (data.percentageValue) {
           discountAmount = (subtotalCalc * data.percentageValue) / 100;
@@ -279,7 +253,6 @@ const CheckoutPage: React.FC = () => {
         } else if (data.fixedValue) {
           discountAmount = data.fixedValue;
         }
-
         setDiscount({ code, amount: discountAmount });
       } catch (err) {
         setErrorDiscount(err instanceof Error ? err.message : 'فشل في التحقق من الكود');
@@ -290,38 +263,35 @@ const CheckoutPage: React.FC = () => {
     [state.cart, apiUrl]
   );
 
+  // --- Form Validation Logic (Modified for governorate string check) ---
   const validateForm = useCallback(() => {
     const newErrors: { [key: string]: string } = {};
-
     if (!formData.fullName.trim()) newErrors.fullName = 'الاسم الكامل مطلوب';
-
     if (!formData.phone.trim()) {
       newErrors.phone = 'رقم الهاتف مطلوب';
     } else if (!/^01[0-9]{9}$/.test(formData.phone)) {
       newErrors.phone = 'رقم الهاتف غير صحيح';
     }
-
     if (!formData.address.trim()) newErrors.address = 'العنوان مطلوب';
-    if (!formData.governorate || formData.governorate === '0') newErrors.governorate = 'المحافظة مطلوبة';
-
+    // Check if governorate is selected (should be a non-empty string now)
+    if (!formData.governorate.trim()) newErrors.governorate = 'المحافظة مطلوبة'; 
     if (formData.paymentMethod === 'visa') {
       if (!formData.cardNumber.trim()) newErrors.cardNumber = 'رقم البطاقة مطلوب';
       if (!formData.expiryDate.trim()) newErrors.expiryDate = 'تاريخ الانتهاء مطلوب';
       if (!formData.cvv.trim()) newErrors.cvv = 'رمز الأمان مطلوب';
       if (!formData.cardName.trim()) newErrors.cardName = 'اسم حامل البطاقة مطلوب';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
+  // --- Admin Notification Logic (Unchanged) ---
   const sendAdminNotification = useCallback(
     async (orderId: string, total: number, retryCount = 3, retryDelay = 1000) => {
       const token = localStorage.getItem('accessToken');
       if (!token) {
         throw new Error('authentication_required');
       }
-
       for (let attempt = 1; attempt <= retryCount; attempt++) {
         try {
           console.log(`Sending admin notification, attempt ${attempt}/${retryCount}`);
@@ -336,13 +306,11 @@ const CheckoutPage: React.FC = () => {
               total: total.toFixed(2),
             }),
           });
-
           if (!response.ok) {
             const errorData = await response.text();
             console.error(`Notification failed with status ${response.status}: ${errorData}`);
             throw new Error(`فشل إرسال الإشعار: ${response.status}`);
           }
-
           console.log('Admin notification sent successfully');
           return;
         } catch (err) {
@@ -357,17 +325,21 @@ const CheckoutPage: React.FC = () => {
     [apiUrl]
   );
 
+  // --- Order Submission Logic (Modified to use governorate string) ---
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-
       if (isSubmitting) return;
-
       if (!validateForm()) return;
 
+      // Final check for shipping fee existence for the selected governorate
+      if (!selectedGovernorate && formData.governorate.trim()) {
+        alert('حدث خطأ في تحديد رسوم التوصيل لهذه المحافظة. يرجى اختيار محافظة أخرى أو المحاولة لاحقاً.');
+        return;
+      }
+      
       setIsSubmitting(true);
       setNotificationError(null);
-
       try {
         const token = localStorage.getItem('accessToken');
         if (!token) {
@@ -378,7 +350,8 @@ const CheckoutPage: React.FC = () => {
           fullname: formData.fullName.trim(),
           phonenumber: formData.phone.trim(),
           address: formData.address.trim(),
-          governorate: governorateMap[formData.governorate] || formData.governorate,
+          // Send the selected governorate string directly
+          governorate: formData.governorate.trim(), 
           discountCode: discount?.code || null,
           paymentMethod: formData.paymentMethod === 'cash' ? 0 : 1,
           items: state.cart.map(item => ({
@@ -410,23 +383,17 @@ const CheckoutPage: React.FC = () => {
         const orderResult = await response.json();
         console.log('Order API response:', orderResult);
 
+        // Utility functions (Unchanged)
         const mapStatus = (status: number): 'Pending' | 'Confirmed' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' => {
           switch (status) {
-            case 0: return 'Pending';
-            case 1: return 'Confirmed';
-            case 2: return 'Processing';
-            case 3: return 'Shipped';
-            case 4: return 'Delivered';
-            case 5: return 'Cancelled';
+            case 0: return 'Pending'; case 1: return 'Confirmed'; case 2: return 'Processing';
+            case 3: return 'Shipped'; case 4: return 'Delivered'; case 5: return 'Cancelled';
             default: return 'Pending';
           }
         };
-
         const mapPaymentMethod = (method: number): 'Cash' | 'Card' | 'OnlinePayment' => {
           switch (method) {
-            case 0: return 'Cash';
-            case 1: return 'Card';
-            case 2: return 'OnlinePayment';
+            case 0: return 'Cash'; case 1: return 'Card'; case 2: return 'OnlinePayment';
             default: return 'Cash';
           }
         };
@@ -455,7 +422,7 @@ const CheckoutPage: React.FC = () => {
             fullName: formData.fullName.trim(),
             phone: formData.phone.trim(),
             address: formData.address.trim(),
-            governorate: governorateMap[formData.governorate] || formData.governorate,
+            governorate: formData.governorate.trim(), // Use the selected string
           },
         };
 
@@ -473,6 +440,7 @@ const CheckoutPage: React.FC = () => {
         dispatch({ type: 'CLEAR_CART' });
         alert('تم تأكيد طلبك بنجاح! سيتم التواصل معك قريباً.');
         navigate('/', { replace: true });
+
       } catch (error) {
         let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.';
         if (error instanceof Error) {
@@ -496,13 +464,13 @@ const CheckoutPage: React.FC = () => {
         setIsSubmitting(false);
       }
     },
-    [isSubmitting, validateForm, formData, discount, state.cart, total, shippingFee, discountAmount, dispatch, navigate, apiUrl, sendAdminNotification]
+    [isSubmitting, validateForm, formData, discount, state.cart, total, shippingFee, discountAmount, dispatch, navigate, apiUrl, sendAdminNotification, selectedGovernorate]
   );
 
+  // --- Input and Discount Handlers (Unchanged) ---
   const handleInputChange = useCallback(
     (field: string, value: string) => {
       setFormData(prev => ({ ...prev, [field]: value }));
-
       if (errors[field]) {
         setErrors(prev => {
           const newErrors = { ...prev };
@@ -523,12 +491,14 @@ const CheckoutPage: React.FC = () => {
     }
   }, [formData.discountCode, fetchDiscountCode]);
 
+  // --- Initial Mount Effect (Unchanged) ---
   useEffect(() => {
     console.log('CheckoutPage mounted, fetching cart and shipping fees');
     fetchCart();
     fetchShippingFees();
   }, [fetchCart, fetchShippingFees]);
 
+  // --- Loading/Error Screens (Unchanged) ---
   if (loadingCart) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -584,6 +554,7 @@ const CheckoutPage: React.FC = () => {
     );
   }
 
+  // --- Rendered Form (Modified Governorate Select) ---
   return (
     <div className="min-h-screen bg-gray-50 py-6 px-4 sm:px-6">
       <div className="container mx-auto max-w-4xl">
@@ -594,19 +565,16 @@ const CheckoutPage: React.FC = () => {
           <ArrowRight size={18} />
           <span>العودة للسلة</span>
         </Link>
-
         {notificationError && (
           <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-center">
             <p className="text-yellow-600 text-sm">{notificationError}</p>
           </div>
         )}
-
         <div className="flex flex-col lg:grid lg:grid-cols-3 gap-6">
           {/* Checkout Form */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-6">إتمام الطلب</h2>
-
               {errorShippingFees && (
                 <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-center">
                   <p className="text-red-600 text-sm">{errorShippingFees}</p>
@@ -618,12 +586,10 @@ const CheckoutPage: React.FC = () => {
                   </button>
                 </div>
               )}
-
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Customer Information */}
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">معلومات العميل</h3>
-
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -641,7 +607,6 @@ const CheckoutPage: React.FC = () => {
                       />
                       {errors.fullName && <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>}
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         رقم الهاتف *
@@ -660,7 +625,6 @@ const CheckoutPage: React.FC = () => {
                       {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
                     </div>
                   </div>
-
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       العنوان التفصيلي *
@@ -677,52 +641,36 @@ const CheckoutPage: React.FC = () => {
                     />
                     {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                   </div>
-
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       المحافظة *
                     </label>
-                    <select
-                      value={formData.governorate}
-                      onChange={(e) => handleInputChange('governorate', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right text-base ${
-                        errors.governorate ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      dir="rtl"
-                      disabled={isSubmitting}
-                    >
-                      <option value="0">اختر...</option>
-                      <option value="7">الدقهلية</option>
-                      <option value="1">القاهرة</option>
-                      <option value="2">الأسكندرية</option>
-                      <option value="3">بورسعيد</option>
-                      <option value="4">السويس</option>
-                      <option value="5">الإسماعيلية</option>
-                      <option value="6">دمياط</option>
-                      <option value="8">الشرقية</option>
-                      <option value="9">القليوبية</option>
-                      <option value="10">كفر الشيخ</option>
-                      <option value="11">الغربية</option>
-                      <option value="12">المنوفية</option>
-                      <option value="13">البحيرة</option>
-                      <option value="14">الجيزة</option>
-                      <option value="15">بنى سويف</option>
-                      <option value="16">الفيوم</option>
-                      <option value="17">المنيا</option>
-                      <option value="18">أسيوط</option>
-                      <option value="19">سوهاج</option>
-                      <option value="20">قنا</option>
-                      <option value="21">أسوان</option>
-                      <option value="22">مطروح</option>
-                      <option value="23">الوادى الجديد</option>
-                      <option value="24">البحر الاحمر</option>
-                      <option value="25">شمال سيناء</option>
-                      <option value="26">جنوب سيناء</option>
-                      <option value="27">الأقصر</option>
-                    </select>
+                    {loadingShippingFees ? (
+                      <div className="w-full px-4 py-3 border rounded-lg bg-gray-100 flex items-center">
+                         <Loader2 className="animate-spin text-pink-500 mr-2" size={16} />
+                         <span className="text-sm text-gray-500">جاري جلب المحافظات...</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.governorate}
+                        onChange={(e) => handleInputChange('governorate', e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent text-right text-base ${
+                          errors.governorate ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                        dir="rtl"
+                        disabled={isSubmitting}
+                      >
+                        <option value="">اختر...</option>
+                        {shippingFees.map((gov) => (
+                          <option key={gov.id} value={gov.governorate}>
+                            {gov.governorate}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    
                     {errors.governorate && <p className="text-red-500 text-sm mt-1">{errors.governorate}</p>}
                   </div>
-
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       كود الخصم
@@ -764,10 +712,8 @@ const CheckoutPage: React.FC = () => {
                     )}
                   </div>
                 </div>
-
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">طريقة الدفع</h3>
-
                   <div className="space-y-4">
                     <label className="flex items-center space-x-reverse space-x-3 p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
                       <input
@@ -784,12 +730,11 @@ const CheckoutPage: React.FC = () => {
                     </label>
                   </div>
                 </div>
-
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || loadingShippingFees || state.cart.length === 0 || !selectedGovernorate}
                   className={`w-full py-3 rounded-lg font-medium text-base transition-colors ${
-                    isSubmitting
+                    isSubmitting || loadingShippingFees || state.cart.length === 0 || !selectedGovernorate
                       ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                       : 'bg-pink-600 text-white hover:bg-pink-700'
                   }`}
@@ -803,14 +748,18 @@ const CheckoutPage: React.FC = () => {
                     'تأكيد الطلب'
                   )}
                 </button>
+                {!selectedGovernorate && formData.governorate && (
+                   <p className="text-red-500 text-sm mt-2 text-center">يرجى اختيار محافظة متوفرة لتحديد رسوم التوصيل.</p>
+                )}
+                {state.cart.length === 0 && (
+                   <p className="text-red-500 text-sm mt-2 text-center">السلة فارغة. يرجى إضافة منتجات.</p>
+                )}
               </form>
             </div>
           </div>
-
           <div className="lg:col-span-1">
             <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 sticky top-4">
               <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-6">ملخص الطلب</h3>
-
               <div className="space-y-4 mb-6">
                 {state.cart.map((item) => (
                   <div key={`${item.product.id}-${item.size}-${item.color}`} className="flex justify-between items-start">
@@ -826,31 +775,34 @@ const CheckoutPage: React.FC = () => {
                   </div>
                 ))}
               </div>
-
               <div className="space-y-3 mb-6 border-t pt-4">
                 <div className="flex justify-between text-sm sm:text-base">
                   <span className="text-gray-600">المجموع الفرعي</span>
                   <span className="font-semibold">{subtotal.toFixed(2)} جنيه</span>
                 </div>
-
                 {discount && (
                   <div className="flex justify-between text-sm sm:text-base">
                     <span className="text-gray-600">الخصم ({discount.code})</span>
                     <span className="font-semibold text-green-600">-{discountAmount.toFixed(2)} جنيه</span>
                   </div>
                 )}
-
                 <div className="flex justify-between text-sm sm:text-base">
                   <span className="text-gray-600">رسوم التوصيل</span>
-                  <span className="font-semibold">{shippingFee.toFixed(2)} جنيه</span>
+                  {loadingShippingFees ? (
+                    <Loader2 className="animate-spin text-gray-400" size={16} />
+                  ) : (
+                    <span className="font-semibold">{shippingFee.toFixed(2)} جنيه</span>
+                  )}
                 </div>
-
-                {selectedGovernorate && (
+                {selectedGovernorate ? (
                   <p className="text-xs text-gray-500">
                     التوصيل خلال: {selectedGovernorate.deliveryTime}
                   </p>
+                ) : (
+                    <p className="text-xs text-red-500">
+                       {formData.governorate ? 'جاري حساب الرسوم أو الرسوم غير متوفرة' : 'يرجى اختيار المحافظة'}
+                    </p>
                 )}
-
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-base sm:text-lg font-bold">
                     <span>المجموع الكلي</span>
