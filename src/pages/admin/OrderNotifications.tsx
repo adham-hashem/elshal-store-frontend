@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Bell, X, Check } from 'lucide-react';
 import html2canvas from 'html2canvas'; // Import html2canvas
-import { jsPDF } from 'jspdf'; // Import jsPDF
+// jspdf will be dynamically imported inside exportToPdf to avoid needing esModuleInterop
 
 // OrderNotification interface matching the backend response
 interface OrderNotification {
@@ -50,60 +50,77 @@ const OrderNotifications: React.FC = () => {
   };
 
   // 📄 PDF Generation Logic
-  const exportToPdf = async () => {
-    const input = document.getElementById('notification-details-to-print');
-    if (!input || !selectedNotification) {
-      console.error('Print element not found or no notification selected.');
-      return;
-    }
-
-    // Temporarily set direction for accurate RTL rendering capture
-    // Note: This relies on html2canvas capturing the visual output correctly.
-    input.style.direction = 'rtl';
-    
-    try {
-      // 1. Convert HTML element to Canvas Image
-      const canvas = await html2canvas(input, {
-        scale: 2, // Increase scale for better image quality in PDF
-        logging: false,
-        useCORS: true,
-      });
-
-      const imgData = canvas.toDataURL('image/png');
+    const exportToPdf = async () => {
+      const input = document.getElementById('notification-details-to-print');
+      if (!input || !selectedNotification) {
+        console.error('Print element not found or no notification selected.');
+        return;
+      }
+  
+      // Temporarily set direction for accurate RTL rendering capture
+      // Note: This relies on html2canvas capturing the visual output correctly.
+      input.style.direction = 'rtl';
       
-      // 2. Initialize jsPDF
-      const pdf = new jsPDF('p', 'mm', 'a4'); 
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-
-      // Calculate dimensions to fit the image on the PDF page
-      const imgProps = pdf.getImageProperties(imgData);
-      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      // 3. Add image and handle pagination
-      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
-      heightLeft -= pdfHeight;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
+      try {
+        // 1. Convert HTML element to Canvas Image
+        const canvas = await html2canvas(input, {
+          scale: 2, // Increase scale for better image quality in PDF
+          logging: false,
+          useCORS: true,
+        });
+  
+        const imgData = canvas.toDataURL('image/png');
+  
+        // Dynamically import jspdf to avoid TypeScript/esModuleInterop issues
+        let jsPDFModule: any;
+        try {
+          jsPDFModule = await import('jspdf');
+        } catch (importErr) {
+          console.error('Failed to load jspdf module:', importErr);
+          setError('فشل في تحميل مكتبة إنشاء PDF. الرجاء المحاولة مرة أخرى.');
+          return;
+        }
+  
+        const jsPDFCtor = jsPDFModule?.jsPDF ?? jsPDFModule?.default ?? jsPDFModule;
+        if (!jsPDFCtor) {
+          console.error('jsPDF export not found in module:', jsPDFModule);
+          setError('فشل في تهيئة مكتبة إنشاء PDF. الرجاء المحاولة مرة أخرى.');
+          return;
+        }
+        
+        // 2. Initialize jsPDF
+        const pdf = new jsPDFCtor('p', 'mm', 'a4'); 
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+  
+        // Calculate dimensions to fit the image on the PDF page
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+  
+        let heightLeft = imgHeight;
+        let position = 0;
+  
+        // 3. Add image and handle pagination
         pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
         heightLeft -= pdfHeight;
+  
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+          heightLeft -= pdfHeight;
+        }
+  
+        // 4. Save the PDF file
+        pdf.save(`Notification_${selectedNotification.orderId || selectedNotification.id}.pdf`);
+      } catch (err) {
+        console.error('Error generating PDF:', err);
+        setError('فشل في إنشاء ملف PDF. الرجاء المحاولة مرة أخرى.');
+      } finally {
+        // Reset direction after use
+        input.style.direction = 'unset'; 
       }
-
-      // 4. Save the PDF file
-      pdf.save(`Notification_${selectedNotification.orderId || selectedNotification.id}.pdf`);
-    } catch (err) {
-      console.error('Error generating PDF:', err);
-      setError('فشل في إنشاء ملف PDF. الرجاء المحاولة مرة أخرى.');
-    } finally {
-      // Reset direction after use
-      input.style.direction = 'unset'; 
-    }
-  };
+    };
 
 
   useEffect(() => {
