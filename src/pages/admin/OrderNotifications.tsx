@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Bell, X, Check } from 'lucide-react';
+import html2canvas from 'html2canvas'; // Import html2canvas
+import { jsPDF } from 'jspdf'; // Import jsPDF
 
 // OrderNotification interface matching the backend response
 interface OrderNotification {
@@ -38,6 +40,71 @@ const OrderNotifications: React.FC = () => {
   const formatNotificationBody = (body: string) => {
     return body.replace(/\$/g, 'جنية مصري ');
   };
+
+  // Utility function to format date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleString('ar-EG', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  };
+
+  // 📄 PDF Generation Logic
+  const exportToPdf = async () => {
+    const input = document.getElementById('notification-details-to-print');
+    if (!input || !selectedNotification) {
+      console.error('Print element not found or no notification selected.');
+      return;
+    }
+
+    // Temporarily set direction for accurate RTL rendering capture
+    // Note: This relies on html2canvas capturing the visual output correctly.
+    input.style.direction = 'rtl';
+    
+    try {
+      // 1. Convert HTML element to Canvas Image
+      const canvas = await html2canvas(input, {
+        scale: 2, // Increase scale for better image quality in PDF
+        logging: false,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      
+      // 2. Initialize jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4'); 
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Calculate dimensions to fit the image on the PDF page
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // 3. Add image and handle pagination
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      // 4. Save the PDF file
+      pdf.save(`Notification_${selectedNotification.orderId || selectedNotification.id}.pdf`);
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      setError('فشل في إنشاء ملف PDF. الرجاء المحاولة مرة أخرى.');
+    } finally {
+      // Reset direction after use
+      input.style.direction = 'unset'; 
+    }
+  };
+
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -145,12 +212,6 @@ const OrderNotifications: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('ar-EG', {
-      dateStyle: 'medium',
-      timeStyle: 'short',
-    });
-  };
 
   if (loading) {
     return (
@@ -161,7 +222,7 @@ const OrderNotifications: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && !selectedNotification) {
     return (
       <div className="text-center py-10 text-red-500 bg-red-50 border border-red-200 rounded-lg">
         {error}
@@ -174,7 +235,8 @@ const OrderNotifications: React.FC = () => {
       <h2 className="text-2xl font-bold text-gray-800 mb-6">إشعارات الطلبات</h2>
 
       {selectedNotification ? (
-        <div className="mb-6 p-4 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200">
+        // Add ID here to target the component for PDF generation
+        <div id="notification-details-to-print" className="mb-6 p-4 sm:p-6 bg-white rounded-xl shadow-md border border-gray-200">
           <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4">تفاصيل الإشعار</h3>
           <div className="space-y-3">
             {/* <div className="flex flex-col sm:flex-row sm:justify-between">
@@ -218,6 +280,14 @@ const OrderNotifications: React.FC = () => {
                 تحديد كمقروء
               </button>
             )}
+            {/* NEW PDF BUTTON */}
+            <button
+                onClick={exportToPdf}
+                className="bg-red-500 text-white px-4 sm:px-6 py-2 rounded-lg hover:bg-red-600 transition-colors flex items-center text-sm sm:text-base"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 ml-2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M12 17v-6"></path><path d="M9 14l3 3 3-3"></path></svg>
+                حفظ كـ PDF
+            </button>
             <button
               onClick={handleCloseDetails}
               className="bg-gray-300 text-gray-700 px-4 sm:px-6 py-2 rounded-lg hover:bg-gray-400 transition-colors flex items-center text-sm sm:text-base"
@@ -235,21 +305,16 @@ const OrderNotifications: React.FC = () => {
               <table className="min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">رقم الطلب</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">العنوان</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الرسالة</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">تاريخ الإنشاء</th>
                     <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
-                    {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نجاح الإرسال</th> */}
-                    {/* <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th> */}
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراءات</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {notifications.map((notification) => (
                     <tr key={notification.id} className="hover:bg-gray-50 transition-colors">
-                      {/* <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
-                        {notification.orderId}
-                      </td> */}
                       <td className={`px-6 py-4 whitespace-nowrap text-sm ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
                         {notification.title}
                         {!notification.isRead && (
@@ -263,9 +328,6 @@ const OrderNotifications: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {notification.isRead ? 'مقروء' : 'غير مقروء'}
                       </td>
-                      {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {notification.success ? 'نعم' : 'لا'}
-                      </td> */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <button
                           onClick={() => handleViewNotification(notification)}
@@ -291,10 +353,7 @@ const OrderNotifications: React.FC = () => {
               >
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    {/* <p className={`font-semibold text-sm ${notification.isRead ? 'text-gray-900' : 'font-bold text-gray-900'}`}>
-                      {notification.orderId}
-                    </p> */}
-                    <p className={`text-xs ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
+                    <p className={`text-sm font-semibold ${notification.isRead ? 'text-gray-500' : 'font-bold text-gray-900'}`}>
                       {notification.title}
                       {!notification.isRead && (
                         <span className="inline-block w-2 h-2 mr-2 rounded-full bg-pink-600"></span>
@@ -321,10 +380,6 @@ const OrderNotifications: React.FC = () => {
                     <span className="text-xs text-gray-500">الحالة:</span>
                     <span className="text-xs text-gray-900">{notification.isRead ? 'مقروء' : 'غير مقروء'}</span>
                   </div>
-                  {/* <div className="flex justify-between">
-                    <span className="text-xs text-gray-500">نجاح الإرسال:</span>
-                    <span className="text-xs text-gray-900">{notification.success ? 'نعم' : 'لا'}</span>
-                  </div> */}
                 </div>
               </div>
             ))}
