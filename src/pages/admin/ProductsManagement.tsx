@@ -777,7 +777,7 @@ const ProductsManagement: React.FC = () => {
                         <h2 className="text-2xl font-bold text-gray-800">إدارة المنتجات</h2>
                         <div className="flex items-center space-x-reverse space-x-4">
                             {/* START: NEW SEASONAL BUTTONS */}
-                            <button
+                            {/* <button
                                 onClick={() => handleSeasonalHide(1, 'hide')} // 1 for Summer
                                 disabled={isLoading}
                                 className="bg-red-500 text-white px-3 py-2 text-sm rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
@@ -792,7 +792,7 @@ const ProductsManagement: React.FC = () => {
                                 title="إخفاء جميع منتجات الشتاء"
                             >
                                 ❌ إخفاء الشتاء (صيف)
-                            </button>
+                            </button> */}
                             {/* END: NEW SEASONAL BUTTONS */}
 
                           <div className="text-sm text-gray-600">
