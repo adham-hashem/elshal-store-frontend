@@ -110,7 +110,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-  return (
+return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       {/* Featured Products */}
       <div className="container mx-auto px-6 pb-16 md:pb-24">
@@ -118,10 +118,12 @@ const HomePage: React.FC = () => {
           منتجاتنا المميزة
         </h2>
         {loading ? (
+          // ... loading content
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">جار التحميل...</h2>
           </div>
         ) : error ? (
+          // ... error content
           <div className="text-center py-12">
             <h2 className="text-2xl font-bold text-red-600 mb-4">{error}</h2>
             <button
@@ -139,7 +141,8 @@ const HomePage: React.FC = () => {
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-right bg-gradient-to-r from-pink-100 to-transparent p-4 rounded-lg">
                   ملابس الحريمي
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {/* *** CHANGE APPLIED HERE *** */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                   {womenProducts.map(product => (
                     <div
                       key={product.id}
@@ -169,7 +172,8 @@ const HomePage: React.FC = () => {
                 <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-right bg-gradient-to-r from-purple-100 to-blue-100 p-4 rounded-lg">
                   ملابس الأطفال
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                {/* *** CHANGE APPLIED HERE *** */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                   {childrenProducts.map(product => (
                     <div
                       key={product.id}
@@ -193,6 +197,7 @@ const HomePage: React.FC = () => {
                 </div>
               </div>
             )}
+            {/* ... no products content ... */}
             {(womenProducts.length === 0 && childrenProducts.length === 0) && (
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">👶</div>
@@ -200,6 +205,7 @@ const HomePage: React.FC = () => {
                 <p className="text-gray-600 mb-6">سيتم إضافة منتجات جديدة قريباً</p>
               </div>
             )}
+            {/* ... view all buttons ... */}
             <div className="text-center mt-12 space-x-4 space-y-4 md:space-y-0">
               <button
                 onClick={() => navigate('/women')}
