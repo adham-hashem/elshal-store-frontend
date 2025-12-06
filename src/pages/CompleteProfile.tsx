@@ -33,7 +33,7 @@ const CompleteProfile = () => {
           navigate('/');
         }
       } catch (err) {
-        console.error('Error checking profile status:', err);
+        // console.error('Error checking profile status:', err);
         setError('حدث خطأ أثناء التحقق من حالة الملف الشخصي');
       }
     };

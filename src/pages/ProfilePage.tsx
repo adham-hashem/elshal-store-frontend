@@ -69,7 +69,7 @@ const ProfilePage = () => {
           Roles: Array.isArray(data.roles) ? data.roles : [],
         });
       } catch (err) {
-        console.error('Profile fetch error:', err);
+        // console.error('Profile fetch error:', err);
         setError(err.message || 'حدث خطأ أثناء جلب بيانات الملف الشخصي. حاول مرة أخرى لاحقاً.');
         if (err.message === 'يرجى تسجيل الدخول أولاً') {
           navigate('/login');
@@ -137,7 +137,7 @@ const ProfilePage = () => {
         IsProfileComplete: !!(profile.FullName && profile.Address && profile.Governorate && profile.PhoneNumber),
       }));
     } catch (err) {
-      console.error('Profile update error:', err);
+      // console.error('Profile update error:', err);
       setError(err.message || 'حدث خطأ أثناء تحديث الملف الشخصي. حاول مرة أخرى لاحقاً.');
       if (err.message === 'يرجى تسجيل الدخول أولاً') {
         navigate('/login');

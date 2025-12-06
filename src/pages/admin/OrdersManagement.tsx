@@ -94,13 +94,13 @@ const OrdersManagement: React.FC = () => {
   // Check authentication and role on mount
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to login');
+      // console.log('User not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
 
     if (userRole !== 'admin') {
-      console.log('User is not admin, redirecting to home');
+      // console.log('User is not admin, redirecting to home');
       navigate('/');
       return;
     }
@@ -136,13 +136,13 @@ const OrdersManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      console.log('Retrieved token:', token ? 'Token found' : 'No token found');
+      // console.log('Retrieved token:', token ? 'Token found' : 'No token found');
       if (!token) {
         navigate('/login');
         throw new Error('No authentication token found. Please log in again.');
       }
 
-      console.log('Fetching orders from:', `${apiUrl}/api/orders?pageNumber=${page}&pageSize=${pageSize}`);
+      // console.log('Fetching orders from:', `${apiUrl}/api/orders?pageNumber=${page}&pageSize=${pageSize}`);
       const response = await fetch(
         `${apiUrl}/api/orders?pageNumber=${page}&pageSize=${pageSize}`,
         {
@@ -153,9 +153,9 @@ const OrdersManagement: React.FC = () => {
         }
       );
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
+      // console.log('Raw response:', responseText);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -178,13 +178,13 @@ const OrdersManagement: React.FC = () => {
         paymentMethod: mapPaymentMethod(order.paymentMethod),
       }));
 
-      console.log('Parsed and mapped data:', { ...data, items: mappedOrders });
+      // console.log('Parsed and mapped data:', { ...data, items: mappedOrders });
       setOrders(mappedOrders);
       setTotalPages(data.totalPages);
       setTotalItems(data.totalItems);
       setCurrentPage(data.pageNumber);
     } catch (err) {
-      console.error('Error fetching orders:', err);
+      // console.error('Error fetching orders:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch orders');
     } finally {
       setLoading(false);
@@ -201,7 +201,7 @@ const OrdersManagement: React.FC = () => {
       }
 
       setLoading(true);
-      console.log('Searching for order:', orderNumber);
+      // console.log('Searching for order:', orderNumber);
       const response = await fetch(
         `${apiUrl}/api/orders/number/${orderNumber}`,
         {
@@ -230,7 +230,7 @@ const OrdersManagement: React.FC = () => {
       setSelectedOrder(mappedOrderDetails);
       setShowOrderDetails(true);
     } catch (err) {
-      console.error('Error searching order:', err);
+      // console.error('Error searching order:', err);
       alert(err instanceof Error ? err.message : 'فشل في البحث عن الطلب');
     } finally {
       setLoading(false);
@@ -247,7 +247,7 @@ const OrdersManagement: React.FC = () => {
       }
 
       setLoading(true);
-      console.log('Fetching customer orders:', customerId);
+      // console.log('Fetching customer orders:', customerId);
       const response = await fetch(
         `${apiUrl}/api/orders/customer/${customerId}`,
         {
@@ -276,7 +276,7 @@ const OrdersManagement: React.FC = () => {
       setCustomerOrders(mappedOrders);
       setShowCustomerOrders(true);
     } catch (err) {
-      console.error('Error fetching customer orders:', err);
+      // console.error('Error fetching customer orders:', err);
       alert(err instanceof Error ? err.message : 'فشل في جلب طلبات العميل');
     } finally {
       setLoading(false);
@@ -293,7 +293,7 @@ const OrdersManagement: React.FC = () => {
       }
 
       setLoading(true);
-      console.log('Updating order status:', { orderId, newStatus });
+      // console.log('Updating order status:', { orderId, newStatus });
       const response = await fetch(
         `${apiUrl}/api/orders/${orderId}/status`,
         {
@@ -306,7 +306,7 @@ const OrdersManagement: React.FC = () => {
         }
       );
 
-      console.log('Update status response:', response.status);
+      // console.log('Update status response:', response.status);
       if (!response.ok) {
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
@@ -323,7 +323,7 @@ const OrdersManagement: React.FC = () => {
       await fetchOrders(currentPage);
       alert('تم تحديث حالة الطلب بنجاح');
     } catch (err) {
-      console.error('Error updating order status:', err);
+      // console.error('Error updating order status:', err);
       alert(err instanceof Error ? err.message : 'فشل في تحديث حالة الطلب');
     } finally {
       setLoading(false);
@@ -344,7 +344,7 @@ const OrdersManagement: React.FC = () => {
       }
 
       setLoading(true);
-      console.log('Deleting order:', orderId);
+      // console.log('Deleting order:', orderId);
       const response = await fetch(
         `${apiUrl}/api/orders/${orderId}`,
         {
@@ -372,7 +372,7 @@ const OrdersManagement: React.FC = () => {
       await fetchOrders(currentPage);
       alert('تم حذف الطلب بنجاح');
     } catch (err) {
-      console.error('Error deleting order:', err);
+      // console.error('Error deleting order:', err);
       alert(err instanceof Error ? err.message : 'فشل في حذف الطلب');
     } finally {
       setLoading(false);
@@ -388,7 +388,7 @@ const OrdersManagement: React.FC = () => {
         throw new Error('No authentication token found. Please log in again.');
       }
 
-      console.log('Fetching order details for:', orderId);
+      // console.log('Fetching order details for:', orderId);
       const response = await fetch(
         `${apiUrl}/api/orders/${orderId}`,
         {
@@ -399,7 +399,7 @@ const OrdersManagement: React.FC = () => {
         }
       );
 
-      console.log('Order details response:', response.status);
+      // console.log('Order details response:', response.status);
       if (!response.ok) {
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
@@ -420,11 +420,11 @@ const OrdersManagement: React.FC = () => {
         status: mapStatus(orderDetails.status),
         paymentMethod: mapPaymentMethod(orderDetails.paymentMethod),
       };
-      console.log('Order details:', mappedOrderDetails);
+      // console.log('Order details:', mappedOrderDetails);
       setSelectedOrder(mappedOrderDetails);
       setShowOrderDetails(true);
     } catch (err) {
-      console.error('Error fetching order details:', err);
+      // console.error('Error fetching order details:', err);
       alert(err instanceof Error ? err.message : 'فشل في جلب تفاصيل الطلب');
     }
   };

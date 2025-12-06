@@ -91,7 +91,7 @@ const CheckoutPage: React.FC = () => {
   const fetchCart = useCallback(async (retryCount = 3, retryDelay = 1000) => {
     const token = localStorage.getItem('accessToken');
     if (!token) {
-      console.error('No access token found');
+      // console.error('No access token found');
       setCartError('يرجى تسجيل الدخول لعرض السلة');
       setLoadingCart(false);
       navigate('/login');
@@ -101,7 +101,7 @@ const CheckoutPage: React.FC = () => {
     setCartError(null);
     for (let attempt = 1; attempt <= retryCount; attempt++) {
       try {
-        console.log(`Fetching cart, attempt ${attempt}/${retryCount}`);
+        // console.log(`Fetching cart, attempt ${attempt}/${retryCount}`);
         const response = await fetch(`${apiUrl}/api/cart`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -109,14 +109,14 @@ const CheckoutPage: React.FC = () => {
         });
         if (!response.ok) {
           const errorText = await response.text();
-          console.error(`Cart fetch failed with status ${response.status}: ${errorText}`);
+          // console.error(`Cart fetch failed with status ${response.status}: ${errorText}`);
           if (response.status === 401) {
             throw new Error('جلسة منتهية، يرجى تسجيل الدخول مرة أخرى');
           }
           throw new Error('فشل في جلب بيانات السلة');
         }
         const data: ApiCartResponse = await response.json();
-        console.log('Cart API response:', data);
+        // console.log('Cart API response:', data);
         const normalizedItems: CartItem[] = data.items?.map(item => ({
           id: item.id,
           product: {
@@ -134,7 +134,7 @@ const CheckoutPage: React.FC = () => {
               : img.imagePath,
           })) || [],
         })) || [];
-        console.log('Normalized cart items:', normalizedItems);
+        // console.log('Normalized cart items:', normalizedItems);
         dispatch({ type: 'SET_CART', payload: normalizedItems });
         if (normalizedItems.length === 0) {
           console.warn('Cart is empty');
@@ -143,7 +143,7 @@ const CheckoutPage: React.FC = () => {
         setLoadingCart(false);
         return;
       } catch (err) {
-        console.error(`Cart fetch attempt ${attempt} failed:`, err);
+        // console.error(`Cart fetch attempt ${attempt} failed:`, err);
         if (attempt === retryCount) {
           setCartError(err instanceof Error ? err.message : 'حدث خطأ أثناء جلب بيانات السلة');
           setLoadingCart(false);
@@ -179,7 +179,7 @@ const CheckoutPage: React.FC = () => {
         throw new Error(`فشل في جلب رسوم التوصيل: ${response.status}`);
       }
       const data: ApiResponse = await response.json();
-      console.log('Shipping fees API response:', data);
+      // console.log('Shipping fees API response:', data);
       // Clean up governorate names by removing extra spaces from the API response items
       const cleanedItems = data.items.map(item => ({
         ...item,
@@ -208,7 +208,7 @@ const CheckoutPage: React.FC = () => {
     const discountAmt = discount?.amount || 0;
     const totalCalc = Math.max(0, subtotalCalc - discountAmt + shipFee);
 
-    console.log('Calculated totals:', { subtotalCalc, shipFee, discountAmt, totalCalc, selectedGovernorate: selectedGov });
+    // console.log('Calculated totals:', { subtotalCalc, shipFee, discountAmt, totalCalc, selectedGovernorate: selectedGov });
     return {
       subtotal: subtotalCalc,
       selectedGovernorate: selectedGov,
@@ -236,7 +236,7 @@ const CheckoutPage: React.FC = () => {
           throw new Error(`فشل في التحقق من كود الخصم: ${response.status}`);
         }
         const data: DiscountCode = await response.json();
-        console.log('Discount code API response:', data);
+        // console.log('Discount code API response:', data);
         if (!data.isActive) {
           throw new Error('الكود غير صالح أو منتهي الصلاحية');
         }
@@ -294,7 +294,7 @@ const CheckoutPage: React.FC = () => {
       }
       for (let attempt = 1; attempt <= retryCount; attempt++) {
         try {
-          console.log(`Sending admin notification, attempt ${attempt}/${retryCount}`);
+          // console.log(`Sending admin notification, attempt ${attempt}/${retryCount}`);
           const response = await fetch(`${apiUrl}/api/notification/send`, {
             method: 'POST',
             headers: {
@@ -308,13 +308,13 @@ const CheckoutPage: React.FC = () => {
           });
           if (!response.ok) {
             const errorData = await response.text();
-            console.error(`Notification failed with status ${response.status}: ${errorData}`);
+            // console.error(`Notification failed with status ${response.status}: ${errorData}`);
             throw new Error(`فشل إرسال الإشعار: ${response.status}`);
           }
-          console.log('Admin notification sent successfully');
+          // console.log('Admin notification sent successfully');
           return;
         } catch (err) {
-          console.error(`Notification attempt ${attempt} failed:`, err);
+          // console.error(`Notification attempt ${attempt} failed:`, err);
           if (attempt === retryCount) {
             throw err;
           }
@@ -363,7 +363,7 @@ const CheckoutPage: React.FC = () => {
           })),
         };
 
-        console.log('Submitting order with body:', requestBody);
+        // console.log('Submitting order with body:', requestBody);
 
         const response = await fetch(`${apiUrl}/api/orders`, {
           method: 'POST',
@@ -376,12 +376,12 @@ const CheckoutPage: React.FC = () => {
 
         if (!response.ok) {
           const errorData = await response.text();
-          console.error('Order submission failed:', errorData);
+          // console.error('Order submission failed:', errorData);
           throw new Error(`فشل إرسال الطلب: ${response.status} - ${errorData}`);
         }
 
         const orderResult = await response.json();
-        console.log('Order API response:', orderResult);
+        // console.log('Order API response:', orderResult);
 
         // Utility functions (Unchanged)
         const mapStatus = (status: number): 'Pending' | 'Confirmed' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' => {
@@ -426,14 +426,14 @@ const CheckoutPage: React.FC = () => {
           },
         };
 
-        console.log('Local order created:', localOrder);
+        // console.log('Local order created:', localOrder);
         dispatch({ type: 'ADD_ORDER', payload: localOrder });
 
         try {
           await sendAdminNotification(localOrder.id, total);
-          console.log('Admin notification request sent');
+          // console.log('Admin notification request sent');
         } catch (notificationError) {
-          console.error('Failed to send admin notification:', notificationError);
+          // console.error('Failed to send admin notification:', notificationError);
           setNotificationError('فشل إرسال إشعار للإدارة، تم إنشاء الطلب بنجاح');
         }
 
@@ -458,7 +458,7 @@ const CheckoutPage: React.FC = () => {
             errorMessage = 'تحقق من اتصال الإنترنت وحاول مرة أخرى.';
           }
         }
-        console.error('Order submission error:', error);
+        // console.error('Order submission error:', error);
         alert(errorMessage);
       } finally {
         setIsSubmitting(false);
@@ -493,7 +493,7 @@ const CheckoutPage: React.FC = () => {
 
   // --- Initial Mount Effect (Unchanged) ---
   useEffect(() => {
-    console.log('CheckoutPage mounted, fetching cart and shipping fees');
+    // console.log('CheckoutPage mounted, fetching cart and shipping fees');
     fetchCart();
     fetchShippingFees();
   }, [fetchCart, fetchShippingFees]);

@@ -44,13 +44,13 @@ const ShippingManagement: React.FC = () => {
   // Check authentication and role on mount
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to login');
+      // console.log('User not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
 
     if (userRole !== 'admin') {
-      console.log('User is not admin, redirecting to home');
+      // console.log('User is not admin, redirecting to home');
       navigate('/');
       return;
     }
@@ -65,13 +65,13 @@ const ShippingManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      console.log('Retrieved token:', token ? 'Token found' : 'No token found');
+      // console.log('Retrieved token:', token ? 'Token found' : 'No token found');
       if (!token) {
         navigate('/login');
         throw new Error('لا يوجد رمز مصادقة. يرجى تسجيل الدخول مرة أخرى.');
       }
 
-      console.log('Fetching shipping fees from:', `${apiUrl}/api/shipping-fees?pageNumber=${page}&pageSize=${pageSize}`);
+      // console.log('Fetching shipping fees from:', `${apiUrl}/api/shipping-fees?pageNumber=${page}&pageSize=${pageSize}`);
       const response = await fetch(
         `${apiUrl}/api/shipping-fees?pageNumber=${page}&pageSize=${pageSize}`,
         {
@@ -82,9 +82,9 @@ const ShippingManagement: React.FC = () => {
         }
       );
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
+      // console.log('Raw response:', responseText);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -99,13 +99,13 @@ const ShippingManagement: React.FC = () => {
       }
 
       const data: PaginatedShippingFeesResponse = JSON.parse(responseText);
-      console.log('Parsed data:', data);
+      // console.log('Parsed data:', data);
       setShippingFees(data.items);
       setTotalPages(data.totalPages);
       setTotalItems(data.totalItems);
       setCurrentPage(data.pageNumber);
     } catch (err) {
-      console.error('Error fetching shipping fees:', err);
+      // console.error('Error fetching shipping fees:', err);
       setError(err instanceof Error ? err.message : 'فشل في جلب رسوم الشحن');
     } finally {
       setIsLoading(false);
@@ -149,7 +149,7 @@ const ShippingManagement: React.FC = () => {
         status: newShippingFee.status, // Send as number (0 or 1)
       };
 
-      console.log('Creating shipping fee:', request);
+      // console.log('Creating shipping fee:', request);
       const response = await fetch(`${apiUrl}/api/shipping-fees`, {
         method: 'POST',
         headers: {
@@ -159,10 +159,10 @@ const ShippingManagement: React.FC = () => {
         body: JSON.stringify(request),
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
+        // console.log('Error response:', errorText);
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
           navigate('/login');
@@ -185,7 +185,7 @@ const ShippingManagement: React.FC = () => {
       });
       alert('تم إضافة رسوم الشحن بنجاح!');
     } catch (error) {
-      console.error('Error adding shipping fee:', error);
+      // console.error('Error adding shipping fee:', error);
       alert(error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة رسوم الشحن');
     } finally {
       setIsLoading(false);
@@ -218,7 +218,7 @@ const ShippingManagement: React.FC = () => {
         status: newShippingFee.status, // Send as number (0 or 1)
       };
 
-      console.log('Updating shipping fee:', { id: editingShippingFee.id, ...request });
+      // console.log('Updating shipping fee:', { id: editingShippingFee.id, ...request });
       const response = await fetch(`${apiUrl}/api/shipping-fees/${editingShippingFee.id}`, {
         method: 'PUT',
         headers: {
@@ -228,10 +228,10 @@ const ShippingManagement: React.FC = () => {
         body: JSON.stringify(request),
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
+        // console.log('Error response:', errorText);
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
           navigate('/login');
@@ -257,7 +257,7 @@ const ShippingManagement: React.FC = () => {
       });
       alert('تم تحديث رسوم الشحن بنجاح!');
     } catch (error) {
-      console.error('Error updating shipping fee:', error);
+      // console.error('Error updating shipping fee:', error);
       alert(error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث رسوم الشحن');
     } finally {
       setIsLoading(false);
@@ -279,7 +279,7 @@ const ShippingManagement: React.FC = () => {
 
     setIsLoading(true);
     try {
-      console.log('Deleting shipping fee:', id);
+      // console.log('Deleting shipping fee:', id);
       const response = await fetch(`${apiUrl}/api/shipping-fees/${id}`, {
         method: 'DELETE',
         headers: {
@@ -288,10 +288,10 @@ const ShippingManagement: React.FC = () => {
         },
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
+        // console.log('Error response:', errorText);
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
           navigate('/login');
@@ -308,7 +308,7 @@ const ShippingManagement: React.FC = () => {
       await fetchShippingFees(currentPage);
       alert('تم حذف رسوم الشحن بنجاح!');
     } catch (error) {
-      console.error('Error deleting shipping fee:', error);
+      // console.error('Error deleting shipping fee:', error);
       alert(error instanceof Error ? error.message : 'حدث خطأ أثناء حذف رسوم الشحن');
     } finally {
       setIsLoading(false);

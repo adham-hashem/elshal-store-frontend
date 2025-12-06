@@ -85,7 +85,7 @@ const OrderDetails: React.FC = () => {
 
         setOrder(mappedOrder);
       } catch (err: any) {
-        console.error('Error fetching order:', err);
+        // console.error('Error fetching order:', err);
         setError(err.message || 'An error occurred while fetching order details.');
       } finally {
         setLoading(false);

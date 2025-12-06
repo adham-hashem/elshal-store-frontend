@@ -75,19 +75,19 @@ const ProductsManagement: React.FC = () => {
   useEffect(() => {
     const getAuthToken = () => {
       const authToken = localStorage.getItem('accessToken');
-      console.log('Retrieved token:', authToken ? 'Token found' : 'No token found');
+      // console.log('Retrieved token:', authToken ? 'Token found' : 'No token found');
       setToken(authToken);
       return authToken;
     };
 
     if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to login');
+      // console.log('User not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
 
     if (userRole !== 'admin') {
-      console.log('User is not admin, redirecting to home');
+      // console.log('User is not admin, redirecting to home');
       navigate('/');
       return;
     }
@@ -102,8 +102,8 @@ const ProductsManagement: React.FC = () => {
   }, [token, currentPage]);
 
   useEffect(() => {
-    console.log('Current products:', products.length, 'items');
-    console.log('Products data:', products);
+    // console.log('Current products:', products.length, 'items');
+    // console.log('Products data:', products);
   }, [products]);
 
   const handleLogout = () => {
@@ -132,13 +132,13 @@ const ProductsManagement: React.FC = () => {
         },
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
+      // console.log('Raw response:', responseText);
 
       if (response.ok) {
         const data: PaginatedResponse = JSON.parse(responseText);
-        console.log('Parsed data:', data);
+        // console.log('Parsed data:', data);
         if (data && Array.isArray(data.items)) {
           const mappedProducts: Product[] = data.items.map(item => ({
             ...item,
@@ -156,20 +156,20 @@ const ProductsManagement: React.FC = () => {
               isMain: img.isMain,
             })),
           }));
-          console.log('Mapped products:', mappedProducts);
+          // console.log('Mapped products:', mappedProducts);
           setProducts(mappedProducts);
           setTotalPages(data.totalPages);
-          console.log('Products state updated successfully');
+          // console.log('Products state updated successfully');
         } else {
-          console.error('Invalid response format:', data);
+          // console.error('Invalid response format:', data);
           alert('تنسيق البيانات غير صحيح');
         }
       } else {
-        console.error('Error fetching products:', responseText);
+        // console.error('Error fetching products:', responseText);
         alert('فشل في جلب المنتجات');
       }
     } catch (error) {
-      console.error('Error refreshing products:', error);
+      // console.error('Error refreshing products:', error);
       alert('حدث خطأ أثناء جلب المنتجات');
     } finally {
       setIsLoading(false);
@@ -238,7 +238,7 @@ const ProductsManagement: React.FC = () => {
         .filter(file => file !== null)
         .forEach(file => formData.append('imageFiles', file as File));
 
-      console.log('Sending request to:', `${apiUrl}/api/products`);
+      // console.log('Sending request to:', `${apiUrl}/api/products`);
 
       const response = await fetch(`${apiUrl}/api/products`, {
         method: 'POST',
@@ -248,11 +248,11 @@ const ProductsManagement: React.FC = () => {
         body: formData,
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Server response:', errorText);
+        // console.error('Server response:', errorText);
 
         if (errorText.includes('already exists')) {
           const codeMatch = errorText.match(/code '([^']+)'/);
@@ -275,8 +275,8 @@ const ProductsManagement: React.FC = () => {
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.log('Response text:', responseText);
+          // console.error('JSON parse error:', parseError);
+          // console.log('Response text:', responseText);
         }
       }
 
@@ -297,7 +297,7 @@ const ProductsManagement: React.FC = () => {
         };
         setProducts(prevProducts => [...prevProducts, newProductWithImages]);
       } else {
-        console.log('No product data returned from server, refreshing product list');
+        // console.log('No product data returned from server, refreshing product list');
         await refreshProductsList(currentPage);
       }
 
@@ -305,7 +305,7 @@ const ProductsManagement: React.FC = () => {
       resetProductForm();
       alert('تم إضافة المنتج بنجاح!');
     } catch (error: any) {
-      console.error('Error adding product:', error);
+      // console.error('Error adding product:', error);
       alert(error.message || 'حدث خطأ أثناء إضافة المنتج');
     } finally {
       setIsLoading(false);
@@ -377,7 +377,7 @@ const ProductsManagement: React.FC = () => {
             const file = new File([blob], `image-${i}.jpg`, { type: blob.type });
             newImages.push(file);
           } catch (error) {
-            console.error('Error processing image:', error);
+            // console.error('Error processing image:', error);
           }
         }
       }
@@ -390,7 +390,7 @@ const ProductsManagement: React.FC = () => {
         });
       }
 
-      console.log('Sending PUT request to:', `${apiUrl}/api/products/${editingProduct.id}`);
+      // console.log('Sending PUT request to:', `${apiUrl}/api/products/${editingProduct.id}`);
 
       const response = await fetch(`${apiUrl}/api/products/${editingProduct.id}`, {
         method: 'PUT',
@@ -400,14 +400,14 @@ const ProductsManagement: React.FC = () => {
         body: formData,
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('=== SERVER ERROR RESPONSE ===');
-        console.error('Status:', response.status);
-        console.error('Response Body:', errorText);
-        console.error('=== END SERVER ERROR ===');
+        // console.error('=== SERVER ERROR RESPONSE ===');
+        // console.error('Status:', response.status);
+        // console.error('Response Body:', errorText);
+        // console.error('=== END SERVER ERROR ===');
 
         if (errorText.includes('already exists') || errorText.includes('duplicate')) {
           const codeMatch = errorText.match(/code '([^']+)'/);
@@ -434,16 +434,16 @@ const ProductsManagement: React.FC = () => {
 
       let result = null;
       const responseText = await response.text();
-      console.log('=== SUCCESS RESPONSE ===');
-      console.log('Response text:', responseText);
-      console.log('=== END SUCCESS RESPONSE ===');
+      // console.log('=== SUCCESS RESPONSE ===');
+      // console.log('Response text:', responseText);
+      // console.log('=== END SUCCESS RESPONSE ===');
 
       if (responseText && responseText.trim()) {
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
-          console.error('JSON parse error:', parseError);
-          console.log('Raw response text:', responseText);
+          // console.error('JSON parse error:', parseError);
+         // console.log('Raw response text:', responseText);
         }
       }
 
@@ -470,7 +470,7 @@ const ProductsManagement: React.FC = () => {
           )
         );
       } else {
-        console.log('No product data returned from server, refreshing product list');
+        // console.log('No product data returned from server, refreshing product list');
         await refreshProductsList(currentPage);
       }
 
@@ -481,7 +481,7 @@ const ProductsManagement: React.FC = () => {
       alert('تم تحديث المنتج بنجاح!');
 
     } catch (error: any) {
-      console.error('Error updating product:', error);
+      // console.error('Error updating product:', error);
       alert(error.message || 'حدث خطأ أثناء تحديث المنتج');
     } finally {
       setIsLoading(false);
@@ -524,7 +524,7 @@ const ProductsManagement: React.FC = () => {
       // Refresh list to see changes
       await refreshProductsList(currentPage);
     } catch (error: any) {
-      console.error('Error in seasonal hide/unhide:', error);
+      // console.error('Error in seasonal hide/unhide:', error);
       alert(error.message || 'حدث خطأ أثناء التحديث الموسمي');
     } finally {
       setIsLoading(false);
@@ -589,7 +589,7 @@ const ProductsManagement: React.FC = () => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Server response:', errorText);
+        // console.error('Server response:', errorText);
 
         if (response.status === 500) {
           if (errorText.includes('REFERENCE constraint') ||
@@ -612,7 +612,7 @@ const ProductsManagement: React.FC = () => {
       await refreshProductsList(currentPage);
       alert('تم حذف المنتج بنجاح!');
     } catch (error: any) {
-      console.error('Error deleting product:', error);
+      // console.error('Error deleting product:', error);
       if (error.message.includes('عربات التسوق') || error.message.includes('CartItems')) {
         alert(`❌ ${error.message}\n\n💡 نصيحة: يمكنك إخفاء المنتج بدلاً من حذفه عن طريق تعديله وإلغاء تفعيله.`);
       } else {
@@ -1123,7 +1123,7 @@ const ProductsManagement: React.FC = () => {
                                       alt={product.name}
                                       className="w-full sm:w-20 lg:w-24 h-48 sm:h-20 lg:h-24 object-cover rounded-lg"
                                       onError={(e) => {
-                                        console.error('Failed to load image for product', product.name, ':', e.currentTarget.src);
+                                        // console.error('Failed to load image for product', product.name, ':', e.currentTarget.src);
                                         // ❗ CHANGE: Do nothing here. The browser will show the broken image icon.
                                       }}
                                     />

@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const decodeToken = (token: string | undefined | null) => {
     if (!token || typeof token !== 'string') {
-      console.error('Invalid token: token is undefined, null, or not a string');
+      // console.error('Invalid token: token is undefined, null, or not a string');
       return null;
     }
     try {
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       );
       return JSON.parse(jsonPayload);
     } catch (error) {
-      console.error('Token decode error:', error);
+      // console.error('Token decode error:', error);
       return null;
     }
   };
@@ -99,7 +99,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             localStorage.removeItem('refreshToken');
           }
         } catch (error) {
-          console.error('Auth initialization error:', error);
+          // console.error('Auth initialization error:', error);
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
         }
@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const redirectTo = isProfileComplete ? (isAdmin ? '/admin/notifications' : '/') : '/complete-profile';
       return { redirectTo };
     } catch (error: any) {
-      console.error('Login failed:', error);
+      // console.error('Login failed:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -190,7 +190,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         let errorMessage = 'فشل تسجيل الدخول باستخدام جوجل';
         try {
           const errorData = await response.json();
-          console.log('Backend error response:', errorData);
+          // console.log('Backend error response:', errorData);
           errorMessage = errorData.errorMessage || errorMessage;
         } catch {
           errorMessage = response.statusText || errorMessage;
@@ -233,7 +233,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const redirectTo = isProfileComplete ? (isAdmin ? '/admin/notifications' : '/') : '/complete-profile';
       return { redirectTo };
     } catch (error: any) {
-      console.error('Google login failed:', error);
+      // console.error('Google login failed:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -255,7 +255,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(errorData.Message || 'فشل إنشاء الحساب');
       }
     } catch (error: any) {
-      console.error('Registration failed:', error);
+      // console.error('Registration failed:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -290,7 +290,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(errorData.Message || 'فشل إرسال رابط إعادة تعيين كلمة المرور');
       }
     } catch (error: any) {
-      console.error('Forgot password failed:', error);
+      // console.error('Forgot password failed:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -312,7 +312,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(errorData.Message || 'فشل إعادة تعيين كلمة المرور');
       }
     } catch (error: any) {
-      console.error('Reset password failed:', error);
+      // console.error('Reset password failed:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -334,7 +334,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         throw new Error(errorData.Message || 'فشل إرسال رابط التحقق من البريد الإلكتروني');
       }
     } catch (error: any) {
-      console.error('Send email verification failed:', error);
+      // console.error('Send email verification failed:', error);
       throw error;
     } finally {
       setLoading(false);

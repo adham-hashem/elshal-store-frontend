@@ -39,17 +39,17 @@ const LoginPage = () => {
               locale: 'ar'
             });
           } else {
-            console.error('Google Sign-In button element not found');
+            // console.error('Google Sign-In button element not found');
           }
         } catch (error) {
-          console.error('Google Sign-In initialization failed:', error);
+          // console.error('Google Sign-In initialization failed:', error);
         }
       } else {
-        console.error('Google Sign-In SDK not available');
+        // console.error('Google Sign-In SDK not available');
       }
     };
     script.onerror = () => {
-      console.error('Failed to load Google Sign-In script');
+      // console.error('Failed to load Google Sign-In script');
     };
     document.body.appendChild(script);
 
@@ -60,19 +60,19 @@ const LoginPage = () => {
 
   const handleGoogleSignIn = async (response) => {
     try {
-      console.log('Google ID Token:', response.credential);
+      // console.log('Google ID Token:', response.credential);
       const idToken = response.credential;
       if (!idToken) {
         throw new Error('لم يتم استلام رمز جوجل');
       }
       
       const loginResponse = await googleLogin(idToken);
-      console.log('Login response:', loginResponse);
+      // console.log('Login response:', loginResponse);
       
       const from = location.state?.from?.pathname || loginResponse.redirectTo;
       navigate(from, { replace: true });
     } catch (error) {
-      console.error('Google Sign-In error:', error);
+      // console.error('Google Sign-In error:', error);
     }
   };
 

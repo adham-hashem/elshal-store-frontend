@@ -68,7 +68,7 @@ const CustomersManagement: React.FC = () => {
         const data: PaginatedCustomersResponse = await response.json();
 
         if (!Array.isArray(data.items)) {
-          console.error('Expected an array for data.items, received:', data.items);
+          // console.error('Expected an array for data.items, received:', data.items);
           setCustomers([]);
           throw new Error('Invalid response format: Expected an array of customers.');
         }
@@ -76,7 +76,7 @@ const CustomersManagement: React.FC = () => {
         setCustomers(data.items);
         setTotalPages(data.totalPages);
       } catch (err: any) {
-        console.error('Error fetching customers:', err);
+        // console.error('Error fetching customers:', err);
         setError(err.message || 'An error occurred while fetching customers.');
         setCustomers([]);
       } finally {

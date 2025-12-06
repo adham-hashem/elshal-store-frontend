@@ -28,10 +28,10 @@ const NotificationButton: React.FC = () => {
         throw new Error(errorData.message || 'Failed to register notification token');
       }
 
-      console.log('FCM token registered successfully');
+      // console.log('FCM token registered successfully');
       toast.success('تم تفعيل الإشعارات بنجاح لهذا الجهاز!');
     } catch (error) {
-      console.error('Error registering FCM token:', error);
+      // console.error('Error registering FCM token:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
       toast.error(`فشل تفعيل الإشعارات: ${errorMessage}`);
     }
@@ -62,7 +62,7 @@ const NotificationButton: React.FC = () => {
         toast.warn('لم يتم منح إذن الإشعارات. لن تتلقى إشعارات الطلبات.');
       }
     } catch (error) {
-      console.error('Error during notification permission request:', error);
+      // console.error('Error during notification permission request:', error);
       toast.error('حدث خطأ أثناء طلب إذن الإشعارات.');
     }
   };

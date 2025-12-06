@@ -60,7 +60,7 @@ const MyOrders: React.FC = () => {
           throw new Error('لم يتم العثور على رمز الوصول. الرجاء تسجيل الدخول مرة أخرى.');
         }
 
-        console.log('Fetching orders from:', `${apiUrl}/api/orders/my-orders`);
+        // console.log('Fetching orders from:', `${apiUrl}/api/orders/my-orders`);
         const response = await fetch(`${apiUrl}/api/orders/my-orders`, {
           method: 'GET',
           headers: {
@@ -80,11 +80,11 @@ const MyOrders: React.FC = () => {
         }
 
         const data: PaginatedOrdersResponse = await response.json();
-        console.log('API response:', data);
+        // console.log('API response:', data);
 
         // Ensure data.items is an array
         if (!Array.isArray(data.items)) {
-          console.error('Expected an array for data.items, received:', data.items);
+          // console.error('Expected an array for data.items, received:', data.items);
           setOrders([]);
           throw new Error('تنسيق الاستجابة غير صالح: متوقع مصفوفة من الطلبات في data.items.');
         }
@@ -98,7 +98,7 @@ const MyOrders: React.FC = () => {
 
         setOrders(mappedOrders);
       } catch (err: any) {
-        console.error('Error fetching orders:', err);
+        // console.error('Error fetching orders:', err);
         setError(err.message || 'حدث خطأ أثناء جلب الطلبات.');
         setOrders([]);
       } finally {

@@ -164,18 +164,18 @@ const ProductPage: React.FC = () => {
       const token = localStorage.getItem('accessToken');
       
       // Debug: Log token details for troubleshooting
-      console.log('Token from localStorage:', token);
-      console.log('Token length:', token?.length);
-      console.log('Token type:', typeof token);
-      console.log('All localStorage keys:', Object.keys(localStorage));
+//       console.log('Token from localStorage:', token);
+//       console.log('Token length:', token?.length);
+//       console.log('Token type:', typeof token);
+//       console.log('All localStorage keys:', Object.keys(localStorage));
 
       if (!token || token.trim() === '' || token === 'null' || token === 'undefined') {
-        console.log('Token validation failed:', {
-          exists: !!token,
-          isEmpty: token?.trim() === '',
-          isNull: token === 'null',
-          isUndefined: token === 'undefined',
-        });
+//         console.log('Token validation failed:', {
+//           exists: !!token,
+//           isEmpty: token?.trim() === '',
+//           isNull: token === 'null',
+//           isUndefined: token === 'undefined',
+//         });
         alert('يرجى تسجيل الدخول أولاً');
         navigate('/login');
         return;
@@ -213,7 +213,7 @@ const ProductPage: React.FC = () => {
 
       // alert('تم إضافة المنتج إلى السلة بنجاح!');
     } catch (error) {
-      console.error('Error adding to cart:', error);
+//       console.error('Error adding to cart:', error);
       setError(error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة المنتج إلى السلة');
     } finally {
       setAddingToCart(false);

@@ -57,13 +57,13 @@ const DiscountCodesManagement: React.FC = () => {
   // Check authentication and role on mount
   useEffect(() => {
     if (!isAuthenticated) {
-      console.log('User not authenticated, redirecting to login');
+      // console.log('User not authenticated, redirecting to login');
       navigate('/login');
       return;
     }
 
     if (userRole !== 'admin') {
-      console.log('User is not admin, redirecting to home');
+      // console.log('User is not admin, redirecting to home');
       navigate('/');
       return;
     }
@@ -78,13 +78,13 @@ const DiscountCodesManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('accessToken');
-      console.log('Retrieved token:', token ? 'Token found' : 'No token found');
+      // console.log('Retrieved token:', token ? 'Token found' : 'No token found');
       if (!token) {
         navigate('/login');
         throw new Error('لا يوجد رمز مصادقة. يرجى تسجيل الدخول مرة أخرى.');
       }
 
-      console.log('Fetching discount codes from:', `${apiUrl}/api/discount-codes?pageNumber=${page}&pageSize=${pageSize}`);
+      // console.log('Fetching discount codes from:', `${apiUrl}/api/discount-codes?pageNumber=${page}&pageSize=${pageSize}`);
       const response = await fetch(
         `${apiUrl}/api/discount-codes?pageNumber=${page}&pageSize=${pageSize}`,
         {
@@ -95,9 +95,9 @@ const DiscountCodesManagement: React.FC = () => {
         }
       );
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       const responseText = await response.text();
-      console.log('Raw response:', responseText);
+      // console.log('Raw response:', responseText);
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -112,13 +112,13 @@ const DiscountCodesManagement: React.FC = () => {
       }
 
       const data: PaginatedDiscountCodesResponse = JSON.parse(responseText);
-      console.log('Parsed data:', data);
+      // console.log('Parsed data:', data);
       setDiscountCodes(data.items);
       setTotalPages(data.totalPages);
       setTotalItems(data.totalItems);
       setCurrentPage(data.pageNumber);
     } catch (err) {
-      console.error('Error fetching discount codes:', err);
+      // console.error('Error fetching discount codes:', err);
       setError(err instanceof Error ? err.message : 'فشل في جلب أكواد الخصم');
     } finally {
       setIsLoading(false);
@@ -191,7 +191,7 @@ const DiscountCodesManagement: React.FC = () => {
         isActive: newDiscountCode.isActive,
       };
 
-      console.log('Creating discount code:', request);
+      // console.log('Creating discount code:', request);
       const response = await fetch(`${apiUrl}/api/discount-codes`, {
         method: 'POST',
         headers: {
@@ -201,10 +201,10 @@ const DiscountCodesManagement: React.FC = () => {
         body: JSON.stringify(request),
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
+        // console.log('Error response:', errorText);
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
           navigate('/login');
@@ -233,7 +233,7 @@ const DiscountCodesManagement: React.FC = () => {
       });
       alert('تم إضافة كود الخصم بنجاح!');
     } catch (error) {
-      console.error('Error adding discount code:', error);
+      // console.error('Error adding discount code:', error);
       alert(error instanceof Error ? error.message : 'حدث خطأ أثناء إضافة كود الخصم');
     } finally {
       setIsLoading(false);
@@ -272,7 +272,7 @@ const DiscountCodesManagement: React.FC = () => {
         isActive: newDiscountCode.isActive,
       };
 
-      console.log('Updating discount code:', { id: editingDiscountCode.id, ...request });
+      // console.log('Updating discount code:', { id: editingDiscountCode.id, ...request });
       const response = await fetch(`${apiUrl}/api/discount-codes/${editingDiscountCode.id}`, {
         method: 'PUT',
         headers: {
@@ -282,10 +282,10 @@ const DiscountCodesManagement: React.FC = () => {
         body: JSON.stringify(request),
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
+        // console.log('Error response:', errorText);
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
           navigate('/login');
@@ -317,7 +317,7 @@ const DiscountCodesManagement: React.FC = () => {
       });
       alert('تم تحديث كود الخصم بنجاح!');
     } catch (error) {
-      console.error('Error updating discount code:', error);
+      // console.error('Error updating discount code:', error);
       alert(error instanceof Error ? error.message : 'حدث خطأ أثناء تحديث كود الخصم');
     } finally {
       setIsLoading(false);
@@ -339,7 +339,7 @@ const DiscountCodesManagement: React.FC = () => {
 
     setIsLoading(true);
     try {
-      console.log('Deleting discount code:', id);
+      // console.log('Deleting discount code:', id);
       const response = await fetch(`${apiUrl}/api/discount-codes/${id}`, {
         method: 'DELETE',
         headers: {
@@ -348,10 +348,10 @@ const DiscountCodesManagement: React.FC = () => {
         },
       });
 
-      console.log('Response status:', response.status);
+      // console.log('Response status:', response.status);
       if (!response.ok) {
         const errorText = await response.text();
-        console.log('Error response:', errorText);
+        // console.log('Error response:', errorText);
         if (response.status === 401) {
           localStorage.removeItem('accessToken');
           navigate('/login');
@@ -368,7 +368,7 @@ const DiscountCodesManagement: React.FC = () => {
       await fetchDiscountCodes(currentPage);
       alert('تم حذف كود الخصم بنجاح!');
     } catch (error) {
-      console.error('Error deleting discount code:', error);
+      // console.error('Error deleting discount code:', error);
       alert(error instanceof Error ? error.message : 'حدث خطأ أثناء حذف كود الخصم');
     } finally {
       setIsLoading(false);

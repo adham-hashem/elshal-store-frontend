@@ -160,7 +160,7 @@ const OffersPage: React.FC = () => {
       try {
         const token = localStorage.getItem('jwt_token');
         if (token) {
-          console.log('Public access failed, trying authenticated request...');
+          // console.log('Public access failed, trying authenticated request...');
           const authResponse = await makeAuthenticatedRequest(
             `${apiUrl}/api/offers?pageNumber=${pageNumber}&pageSize=${PAGE_SIZE}`,
             false
@@ -175,7 +175,7 @@ const OffersPage: React.FC = () => {
         }
       } catch (authErr) {
         setErrorOffers(err instanceof Error ? err.message : 'Failed to fetch offers');
-        console.error('Error fetching offers:', err);
+        // console.error('Error fetching offers:', err);
       }
     } finally {
       setLoadingOffers(false);
@@ -205,7 +205,7 @@ const OffersPage: React.FC = () => {
       setDiscountCodes(data.items || []);
     } catch (err) {
       setErrorDiscountCodes(err instanceof Error ? err.message : 'Failed to fetch discount codes');
-      console.error('Error fetching discount codes:', err);
+      // console.error('Error fetching discount codes:', err);
     } finally {
       setLoadingDiscountCodes(false);
     }

@@ -40,12 +40,12 @@ const WomenPage: React.FC = () => {
       const contentType = response.headers.get('Content-Type');
       if (!response.ok) {
         const text = await response.text();
-        console.error(`HTTP error! Status: ${response.status}, Response: ${text.substring(0, 200)}...`);
+        // console.error(`HTTP error! Status: ${response.status}, Response: ${text.substring(0, 200)}...`);
         throw new Error(`HTTP error! Status: ${response.status} ${response.statusText}`);
       }
       if (!contentType?.includes('application/json')) {
         const text = await response.text();
-        console.error(`Expected JSON, received ${contentType}: ${text.substring(0, 200)}...`);
+        // console.error(`Expected JSON, received ${contentType}: ${text.substring(0, 200)}...`);
         throw new Error(`Invalid response format: Expected JSON, received ${contentType}`);
       }
 
@@ -66,7 +66,7 @@ const WomenPage: React.FC = () => {
       setTotalPages(data.totalPages);
       setPageNumber(data.pageNumber);
     } catch (err) {
-      console.error('Fetch error:', err);
+      // console.error('Fetch error:', err);
       setError(err instanceof Error ? err.message : 'Error fetching products. Please try again later.');
     } finally {
       setLoading(false);

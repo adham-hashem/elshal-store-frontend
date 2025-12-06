@@ -72,7 +72,7 @@ const OrderNotifications: React.FC = () => {
         const data: PaginatedNotificationsResponse = await response.json();
 
         if (!Array.isArray(data.items)) {
-          console.error('Expected an array for data.items, received:', data.items);
+          // console.error('Expected an array for data.items, received:', data.items);
           setNotifications([]);
           throw new Error('Invalid response format: Expected an array of notifications.');
         }
@@ -86,7 +86,7 @@ const OrderNotifications: React.FC = () => {
         setNotifications(mappedNotifications);
         setTotalPages(data.totalPages);
       } catch (err: any) {
-        console.error('Error fetching notifications:', err);
+        // console.error('Error fetching notifications:', err);
         setError(err.message || 'An error occurred while fetching notifications.');
         setNotifications([]);
       } finally {
@@ -140,7 +140,7 @@ const OrderNotifications: React.FC = () => {
         setSelectedNotification({ ...selectedNotification, isRead: true });
       }
     } catch (err: any) {
-      console.error('Error marking notification as read:', err);
+      // console.error('Error marking notification as read:', err);
       setError(err.message || 'An error occurred while marking notification as read. Please try again or contact support.');
     }
   };

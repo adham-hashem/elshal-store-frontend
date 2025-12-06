@@ -86,14 +86,14 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       };
 
     case 'SET_CART':
-      console.log('SET_CART action dispatched with payload:', action.payload);
+      // console.log('SET_CART action dispatched with payload:', action.payload);
       return {
         ...state,
         cart: action.payload,
       };
 
     case 'CLEAR_CART':
-      console.log('CLEAR_CART action dispatched');
+      // console.log('CLEAR_CART action dispatched');
       return {
         ...state,
         cart: [],
@@ -148,7 +148,7 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
       };
 
     case 'ADD_ORDER':
-      console.log('ADD_ORDER action dispatched with payload:', action.payload);
+      // console.log('ADD_ORDER action dispatched with payload:', action.payload);
       return {
         ...state,
         orders: [...state.orders, action.payload],
@@ -180,12 +180,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Persist cart to localStorage
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(state.cart));
-    console.log('AppContext state updated, cart saved to localStorage:', state.cart);
+    // console.log('AppContext state updated, cart saved to localStorage:', state.cart);
   }, [state.cart]);
 
   // Log state changes for debugging
   useEffect(() => {
-    console.log('AppContext state:', state);
+    // console.log('AppContext state:', state);
   }, [state]);
 
   return (

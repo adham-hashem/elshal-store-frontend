@@ -24,18 +24,18 @@ export async function requestNotificationPermission(): Promise<string | null> {
   try {
     const permission = await Notification.requestPermission();
     if (permission === 'granted') {
-      console.log('Notification permission granted.');
+      // console.log('Notification permission granted.');
       const token = await getToken(messaging, {
         vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
       });
-      console.log('FCM Token:', token);
+      // console.log('FCM Token:', token);
       return token;
     } else {
-      console.log('Notification permission denied.');
+      // console.log('Notification permission denied.');
       return null;
     }
   } catch (error) {
-    console.error('Error retrieving FCM token:', error);
+    // console.error('Error retrieving FCM token:', error);
     return null;
   }
 }
@@ -43,7 +43,7 @@ export async function requestNotificationPermission(): Promise<string | null> {
 // Handle foreground messages
 export function onForegroundMessage(cb: (payload: MessagePayload) => void): Unsubscribe {
   return onMessage(messaging, (payload: MessagePayload) => {
-    console.log('Foreground message received:', payload);
+    // console.log('Foreground message received:', payload);
     cb(payload);
   });
 }

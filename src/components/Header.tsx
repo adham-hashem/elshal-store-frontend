@@ -79,7 +79,7 @@ const Header: React.FC = () => {
         setSearchError(errorMessage);
       }
     } catch (error) {
-      console.error('Search error:', error);
+      // console.error('Search error:', error);
       setSearchResult(null);
       setSearchError('حدث خطأ أثناء البحث. تحقق من الاتصال بالإنترنت أو حاول مرة أخرى لاحقاً.');
     } finally {
