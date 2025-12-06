@@ -28,7 +28,6 @@ interface Product {
   isHidden: boolean;
   isAvailable: boolean;
   season: number; // 0 for All, 1 for Summer, 2 for Winter (based on backend enum)
-  rowVersion: string;
 }
 
 interface PaginatedResponse {
@@ -148,7 +147,6 @@ const ProductsManagement: React.FC = () => {
             isHidden: item.isHidden ?? false,
             isAvailable: item.isAvailable ?? false,
             season: item.season ?? 0,
-            rowVersion: item.rowVersion,
             images: item.images.map(img => ({
               id: img.id,
               // URL construction: Append apiUrl only if the path is relative (starts with / but not a domain)
